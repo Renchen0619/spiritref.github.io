@@ -75,3 +75,16 @@ export function initGlobalHeader() {
     // 執行第一次計算
     syncHeaderHeight();
 }
+
+/**
+ * 讀取遠端版本戳（每次後台同步 JSON 時更新，僅數百 bytes）
+ * 格式：{ posts: { updatedAt, count }, services: { updatedAt, count } }
+ * 回傳正規化字串，抓不到回 null
+ */
+export async function getRemoteVersion() {
+    try {
+        const r = await fetch(`/Data/postFB.version.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) return null;
+        return JSON.stringify(await r.json());
+    } catch (e) { return null; }
+}

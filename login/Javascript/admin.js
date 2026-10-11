@@ -1,23 +1,22 @@
 import { getIni } from '/Javascript/global.js';
 
+// 資料庫 = GitHub 靜態 JSON（不再經 GAS）
+// 文章 -> spiritref.github.io/Data/postFB.json
+// 服務 -> INI JsonService 指向的檔案
+
 const GITHUB_USER = 'SpiritRef';
 const GHOST_REPO = 'ghoststory';
 const JSON_REPO = 'spiritref.github.io';
-const JSON_PATH = 'Data/postFB.json';
+const VERSION_PATH = 'Data/postFB.version.json';
 
 let session = null;
-let cfg = {};
-let dbUrl = '';
-let authUrl = '';
-let novelApi = '';
-let serviceApi = '';
-let githubToken = '';
+let jsonPostsPath = 'Data/postFB.json';
+let jsonSvcPath = '';
 let allPosts = [];
 let allSvc = [];
-let editing = null; // {kind:'post'|'svc', key, data}
+let editing = null; // {kind:'post'|'svc'}
 
 const $ = (id) => document.getElementById(id);
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 function setStatus(msg, color = '#4a2e1b') {
@@ -26,10 +25,102 @@ function setStatus(msg, color = '#4a2e1b') {
 	el.style.color = color;
 }
 
-function getPwd() {
-	const v = $('adminPwd').value.trim();
-	if (v) sessionStorage.setItem('admin_pwd', v);
-	return v || sessionStorage.getItem('admin_pwd') || '';
+// 管理密碼 = 原本邏輯：送 GAS 換 GitHub token（圖片＋JSON＋刪除共用）
+let authUrl = '';
+let finalToken = '';
+
+async function getToken() {
+	if (finalToken) return finalToken;
+	const name = $('adminPwd').value.trim();
+	if (name) sessionStorage.setItem('admin_pwd', name);
+	const user = name || sessionStorage.getItem('admin_pwd') || '';
+	if (!user) throw new Error('請先輸入管理密碼');
+	if (!authUrl) throw new Error('INI 缺少 updateGithub_URL');
+	const res = await fetch(atob(authUrl), { method: 'POST', body: JSON.stringify({ action: 'getGithubToken', user }) });
+	const j = await res.json();
+	if (!j.success) throw new Error('身分驗證失敗：' + (j.message || ''));
+	finalToken = j.githubToken;
+	return finalToken;
+}
+
+function ghHeaders(pat) {
+	return {
+		Authorization: `token ${pat}`,
+		Accept: 'application/vnd.github.v3+json',
+		'Content-Type': 'application/json'
+	};
+}
+
+function toB64(s) {
+	const b = new TextEncoder().encode(s);
+	let o = '';
+	for (let i = 0; i < b.length; i += 0x8000) o += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+	return btoa(o);
+}
+
+function fromB64(b64) {
+	const bin = atob(b64.replace(/\s/g, ''));
+	const bytes = new Uint8Array(bin.length);
+	for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+	return new TextDecoder().decode(bytes);
+}
+
+async function fetchJson(url) {
+	const sep = url.includes('?') ? '&' : '?';
+	const r = await fetch(`${url}${sep}t=${Date.now()}`, { cache: 'no-store' });
+	if (!r.ok) throw new Error(`HTTP ${r.status}`);
+	return r.json();
+}
+
+async function ensurePat() {
+	return getToken();
+}
+
+// GitHub 讀-改-寫：transform(arr) 回傳新陣列；409 自動重試一次
+async function ghModifyJson(pat, repo, path, transform, message) {
+	for (let attempt = 0; attempt < 2; attempt++) {
+		const api = `https://api.github.com/repos/${GITHUB_USER}/${repo}/contents/${path}`;
+		const h = ghHeaders(pat);
+		let sha = null;
+		let arr = [];
+		const g = await fetch(api, { headers: h });
+		if (g.ok) {
+			const j = await g.json();
+			sha = j.sha;
+			arr = JSON.parse(fromB64(j.content));
+			if (!Array.isArray(arr)) throw new Error(`${path} 內容不是陣列`);
+		} else if (g.status !== 404) {
+			throw new Error(`讀取 ${path} 失敗: HTTP ${g.status}（token 無效或權限不足？）`);
+		}
+		const next = transform(arr);
+		const body = { message, content: toB64(JSON.stringify(next, null, 1)) };
+		if (sha) body.sha = sha;
+		const p = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+		if (p.status === 409 && attempt === 0) continue; // 有人同時寫入，重抓再試
+		if (!p.ok) throw new Error(`寫入 ${path} 失敗: HTTP ${p.status} ${(await p.text()).slice(0, 100)}`);
+		return next;
+	}
+	throw new Error('連續衝突，請稍後再試');
+}
+
+async function bumpVersion(pat, section, count) {
+	try {
+		const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${VERSION_PATH}`;
+		const h = ghHeaders(pat);
+		let sha = null;
+		let ver = {};
+		const g = await fetch(api, { headers: h });
+		if (g.ok) {
+			const j = await g.json();
+			sha = j.sha;
+			const parsed = JSON.parse(fromB64(j.content));
+			if (parsed && typeof parsed === 'object') ver = parsed;
+		}
+		ver[section] = { updatedAt: new Date().toISOString(), count };
+		const body = { message: `Sync version (${section})`, content: toB64(JSON.stringify(ver)) };
+		if (sha) body.sha = sha;
+		await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+	} catch (e) { console.warn('版本戳寫入失敗（不影響本體）:', e); }
 }
 
 function logOp(event, detail) {
@@ -38,11 +129,6 @@ function logOp(event, detail) {
 		arr.unshift(`${new Date().toLocaleString()} [${session?.user?.email || '?'}] ${event} ${detail || ''}`);
 		localStorage.setItem('admin_oplog', JSON.stringify(arr.slice(0, 200)));
 		renderOplog();
-	} catch (e) {}
-	//  best-effort 送到 GAS 留存
-	try {
-		fetch(dbUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-			body: JSON.stringify({ action: 'log', token: getPwd(), supabase_token: session.access_token, event, detail: detail || '' }) });
 	} catch (e) {}
 }
 
@@ -53,55 +139,17 @@ function renderOplog() {
 	} catch (e) {}
 }
 
-function decodeApi(v) {
-	if (!v) return '';
-	try { return v.startsWith('http') ? v : atob(v); } catch (e) { return ''; }
-}
-
-async function ensureGithubToken() {
-	if (githubToken) return githubToken;
-	const pwd = getPwd();
-	if (!pwd) throw new Error('請先輸入管理密碼');
-	const res = await fetch(atob(authUrl), { method: 'POST', body: JSON.stringify({ action: 'getGithubToken', user: pwd }) });
-	const j = await res.json();
-	if (!j.success) throw new Error('身分驗證失敗：' + (j.message || ''));
-	githubToken = j.githubToken;
-	return githubToken;
-}
-
-// fire-and-forget（GAS POST 用 no-cors，靠事後讀取驗證）
-async function gasWrite(payload) {
-	const pwd = getPwd();
-	if (!pwd) throw new Error('請先輸入管理密碼');
-	await fetch(dbUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-		body: JSON.stringify({ token: pwd, supabase_token: session.access_token, ...payload }) });
-	return true;
-}
-
-async function fetchJson(url) {
-	const sep = url.includes('?') ? '&' : '?';
-	const r = await fetch(`${url}${sep}t=${Date.now()}`, { cache: 'no-store' });
-	if (!r.ok) throw new Error(`HTTP ${r.status}`);
-	return r.json();
-}
-
-async function pollVerify(url, checkFn, tries = 6) {
-	for (let i = 0; i < tries; i++) {
-		await sleep(3000);
-		try { const d = await fetchJson(url); if (checkFn(d)) return true; } catch (e) {}
-	}
-	return false;
-}
-
 // ---------- 文章 ----------
 async function loadPosts() {
 	$('postRows').innerHTML = '<tr><td colspan="4">載入中...</td></tr>';
 	try {
-		allPosts = await fetchJson(novelApi);
+		allPosts = await fetchJson('/' + jsonPostsPath);
 	} catch (e) {
-		const cached = localStorage.getItem('cached_novel_data');
-		allPosts = cached ? JSON.parse(cached) : [];
-		setStatus('⚠️ API 讀取失敗，顯示本機快取', 'orange');
+		try {
+			const cached = localStorage.getItem('cached_novel_data');
+			allPosts = cached ? JSON.parse(cached) : [];
+		} catch (e2) { allPosts = []; }
+		setStatus('⚠️ JSON 讀取失敗，顯示本機快取', 'orange');
 	}
 	renderPosts();
 }
@@ -129,15 +177,16 @@ async function loadSvc() {
 	const cat = $('svcCat').value;
 	try {
 		if (cat === '公告') {
-			const d = await fetchJson(`${novelApi}${novelApi.includes('?') ? '&' : '?'}type=notice`);
+			const d = await fetchJson('/' + jsonPostsPath);
 			allSvc = d.filter(i => String(i['標題'] || '').includes('公告'));
 		} else {
-			const d = await fetchJson(`${serviceApi}${serviceApi.includes('?') ? '&' : '?'}type=service`);
+			if (!jsonSvcPath) throw new Error('INI 缺少 JsonService');
+			const d = await fetchJson('/' + jsonSvcPath);
 			allSvc = d.filter(i => String(i['分類'] || '') === cat);
 		}
 	} catch (e) {
 		allSvc = [];
-		setStatus('⚠️ 服務 API 讀取失敗', 'orange');
+		setStatus('⚠️ 服務 JSON 讀取失敗：' + e.message, 'orange');
 	}
 	$('svcCount').innerText = `共 ${allSvc.length} 筆`;
 	$('svcRows').innerHTML = allSvc.map((it, idx) => `<tr><td>${esc(it['PostID'] ?? idx + 1)}</td>
@@ -159,8 +208,8 @@ function fieldDefs(kind) {
 
 function openEditor(kind, idx) {
 	const src = kind === 'post' ? allPosts[idx] : allSvc[idx];
-	editing = { kind, idx, key: kind === 'post' ? src['PostID'] : (src['PostID'] ?? src['標題']) };
-	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${editing.key}）`;
+	editing = { kind, idx };
+	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${src['PostID'] ?? src['標題']}）`;
 	$('modalFields').innerHTML = fieldDefs(kind).map(([k, t]) => {
 		const v = src[k] ?? src['內容'] ?? '';
 		return `<label>${k}</label>` + (t === 'textarea'
@@ -190,25 +239,29 @@ async function saveEdit() {
 	const f = collectFields();
 	setStatus('⏳ 儲存中...', 'blue');
 	try {
+		const pat = await ensurePat();
 		if (editing.kind === 'post') {
-			await gasWrite({ action: 'update', sheet: 'novel', PostID: editing.key, ...f });
-			logOp('編輯文章', `${editing.key} ${f['標題'] || ''}`);
-			setStatus('⏳ 已送出，驗證同步中（最長約20秒）...', 'blue');
-			const ok = await pollVerify(novelApi, d => {
-				const p = d.find(x => String(x['PostID']) === String(editing.key));
-				return p && String(p['標題'] || '') === String(f['標題'] || '');
-			});
-			setStatus(ok ? '✅ 已儲存並驗證' : '⚠️ 已送出但驗證逾時，請重整確認（GAS 可能較慢）', ok ? 'green' : 'orange');
+			const pid = allPosts[editing.idx]['PostID'];
+			const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath, (arr) =>
+				arr.map(p => String(p['PostID']) === String(pid) ? { ...p, ...f } : p),
+				`Edit post ${pid} (admin)`);
+			await bumpVersion(pat, 'posts', next.length);
+			logOp('編輯文章', `${pid} ${f['標題'] || ''}`);
+			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
 			await loadPosts();
 		} else {
 			const cat = $('svcCat').value;
-			const sheet = cat === '公告' ? 'novel' : 'service';
-			const payload = { action: 'update', sheet, ...f };
-			if (editing.key !== undefined && allSvc[editing.idx]['PostID'] !== undefined) payload.PostID = editing.key;
-			else payload.keyTitle = allSvc[editing.idx]['標題'];
-			await gasWrite(payload);
+			const isNovel = cat === '公告';
+			const path = isNovel ? jsonPostsPath : jsonSvcPath;
+			const src = allSvc[editing.idx];
+			const useId = src['PostID'] !== undefined;
+			const origTitle = src['標題'];
+			const next = await ghModifyJson(pat, JSON_REPO, path, (arr) =>
+				arr.map(p => (useId ? String(p['PostID']) === String(src['PostID']) : p['標題'] === origTitle) ? { ...p, ...f } : p),
+				`Edit ${cat} (admin)`);
+			await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
 			logOp('編輯服務內容', `${cat} ${f['標題'] || ''}`);
-			setStatus('✅ 已送出（服務內容請到前台確認，約1~3分鐘）', 'green');
+			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
 			await loadSvc();
 		}
 		$('modal').classList.remove('open');
@@ -222,22 +275,28 @@ async function delItem(kind, idx, btn) {
 	if (btn.dataset.armed) {
 		setStatus('⏳ 刪除中...', 'blue');
 		try {
+			const pat = await ensurePat();
 			if (kind === 'post') {
 				const pid = allPosts[idx]['PostID'];
-				await gasWrite({ action: 'delete', sheet: 'novel', PostID: pid });
+				const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
+					(arr) => arr.filter(p => String(p['PostID']) !== String(pid)),
+					`Delete post ${pid} (admin)`);
+				await bumpVersion(pat, 'posts', next.length);
 				logOp('刪除文章', `${pid}`);
-				const ok = await pollVerify(novelApi, d => !d.some(x => String(x['PostID']) === String(pid)));
-				setStatus(ok ? '✅ 已刪除並驗證' : '⚠️ 已送出但驗證逾時，請重整確認', ok ? 'green' : 'orange');
+				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
 				await loadPosts();
 			} else {
 				const cat = $('svcCat').value;
+				const isNovel = cat === '公告';
+				const path = isNovel ? jsonPostsPath : jsonSvcPath;
 				const it = allSvc[idx];
-				const payload = { action: 'delete', sheet: cat === '公告' ? 'novel' : 'service' };
-				if (it['PostID'] !== undefined) payload.PostID = it['PostID'];
-				else payload.keyTitle = it['標題'];
-				await gasWrite(payload);
+				const useId = it['PostID'] !== undefined;
+				const next = await ghModifyJson(pat, JSON_REPO, path,
+					(arr) => arr.filter(p => useId ? String(p['PostID']) !== String(it['PostID']) : p['標題'] !== it['標題']),
+					`Delete ${cat} (admin)`);
+				await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
 				logOp('刪除服務內容', `${cat} ${it['標題'] || ''}`);
-				setStatus('✅ 已送出刪除（前台約1~3分鐘生效）', 'green');
+				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
 				await loadSvc();
 			}
 		} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
@@ -253,7 +312,8 @@ async function delItem(kind, idx, btn) {
 async function loadImages() {
 	$('imgGrid').innerText = '載入中...';
 	try {
-		const h = githubToken ? { Authorization: `token ${githubToken}` } : {};
+		const pat = finalToken || '';
+		const h = pat ? { Authorization: `token ${pat}` } : {};
 		const r = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GHOST_REPO}/contents/pic`, { headers: h });
 		if (!r.ok) throw new Error(`HTTP ${r.status}`);
 		const files = (await r.json()).filter(f => f.type === 'file');
@@ -274,47 +334,55 @@ async function healthCheck() {
 	const rows = [];
 	const t0 = Date.now();
 	try {
-		const d = await fetchJson(novelApi);
-		rows.push(['日誌 API', `<span class="health-ok">正常</span>`, `${Array.isArray(d) ? d.length : '?'} 筆，${Date.now() - t0}ms`]);
-	} catch (e) { rows.push(['日誌 API', `<span class="health-bad">異常</span>`, esc(e.message)]); }
+		const d = await fetchJson('/' + jsonPostsPath);
+		rows.push(['文章 JSON', `<span class="health-ok">正常</span>`, `${Array.isArray(d) ? d.length : '?'} 筆，${Date.now() - t0}ms`]);
+	} catch (e) { rows.push(['文章 JSON', `<span class="health-bad">異常</span>`, esc(e.message)]); }
 	const t1 = Date.now();
 	try {
-		const d = await fetchJson(`${serviceApi}${serviceApi.includes('?') ? '&' : '?'}type=service`);
-		rows.push(['服務 API', `<span class="health-ok">正常</span>`, `${Array.isArray(d) ? d.length : '?'} 筆，${Date.now() - t1}ms`]);
-	} catch (e) { rows.push(['服務 API', `<span class="health-bad">異常</span>`, esc(e.message)]); }
+		const d = await fetchJson('/' + (jsonSvcPath || 'Data/Services.json'));
+		rows.push(['服務 JSON', `<span class="health-ok">正常</span>`, `${Array.isArray(d) ? d.length : '?'} 筆，${Date.now() - t1}ms`]);
+	} catch (e) { rows.push(['服務 JSON', `<span class="health-bad">異常</span>`, esc(e.message)]); }
 	try {
-		const r = await fetch('https://api.github.com/rate_limit');
+		const pat = finalToken || '';
+		const h = pat ? { Authorization: `token ${pat}` } : {};
+		const r = await fetch('https://api.github.com/rate_limit', { headers: h });
 		const j = await r.json();
 		rows.push(['GitHub API', `<span class="health-ok">正常</span>`, `剩餘 ${j.resources.core.remaining}/${j.resources.core.limit}`]);
 	} catch (e) { rows.push(['GitHub API', `<span class="health-bad">異常</span>`, esc(e.message)]); }
+	try {
+		const pat = finalToken || await getToken().catch(() => '');
+		if (!pat) throw new Error('尚未取得 token（請先輸入管理密碼並操作一次）');
+		const r = await fetch('https://api.github.com/user', { headers: { Authorization: `token ${pat}` } });
+		if (!r.ok) throw new Error(`HTTP ${r.status}（token 無效或過期）`);
+		const u = await r.json();
+		rows.push(['Token 有效性', `<span class="health-ok">有效</span>`, esc(u.login || '')]);
+	} catch (e) { rows.push(['Token 有效性', `<span class="health-bad">異常</span>`, esc(e.message)]); }
 	$('healthRows').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
 }
 
-function toB64(s) {
-	const b = new TextEncoder().encode(s);
-	let o = '';
-	for (let i = 0; i < b.length; i += 0x8000) o += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
-	return btoa(o);
-}
-
-async function syncPostsJson() {
-	setStatus('⏳ 同步文章 JSON...', 'blue');
+// 重建版本戳（用現有 JSON 重新計算）
+async function rebuildVersion() {
+	setStatus('⏳ 重建版本戳...', 'blue');
 	try {
-		const token = await ensureGithubToken();
-		const all = await fetchJson(novelApi);
-		if (!Array.isArray(all)) throw new Error('API 回傳非陣列');
-		const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${JSON_PATH}`;
-		const h = { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+		const pat = await ensurePat();
+		const posts = await fetchJson('/' + jsonPostsPath).catch(() => []);
+		const svcs = jsonSvcPath ? await fetchJson('/' + jsonSvcPath).catch(() => []) : [];
+		const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${VERSION_PATH}`;
+		const h = ghHeaders(pat);
 		let sha = null;
 		const g = await fetch(api, { headers: h });
 		if (g.ok) sha = (await g.json()).sha;
-		const body = { message: `Sync ${JSON_PATH}: ${all.length} posts (admin)`, content: toB64(JSON.stringify(all, null, 1)) };
+		const ver = {
+			posts: { updatedAt: new Date().toISOString(), count: Array.isArray(posts) ? posts.length : 0 },
+			services: { updatedAt: new Date().toISOString(), count: Array.isArray(svcs) ? svcs.length : 0 }
+		};
+		const body = { message: 'Rebuild version (admin)', content: toB64(JSON.stringify(ver)) };
 		if (sha) body.sha = sha;
 		const p = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
-		if (!p.ok) throw new Error(`GitHub HTTP ${(await p.text()).slice(0, 80)}`);
-		logOp('同步JSON', `${all.length} 筆`);
-		setStatus(`✅ JSON 已同步，共 ${all.length} 筆`, 'green');
-	} catch (e) { setStatus('❌ 同步失敗：' + e.message, 'red'); }
+		if (!p.ok) throw new Error(`HTTP ${p.status}`);
+		logOp('重建版本戳', '');
+		setStatus('✅ 版本戳已重建', 'green');
+	} catch (e) { setStatus('❌ 重建失敗：' + e.message, 'red'); }
 }
 
 // ---------- 初始化 ----------
@@ -324,11 +392,10 @@ export async function initAdmin(sess) {
 	if (saved) $('adminPwd').value = saved;
 
 	try {
-		cfg = await getIni('/settings/global.ini');
-		dbUrl = decodeApi(cfg.updateData_URL);
-		authUrl = cfg.updateGithub_URL;
-		novelApi = decodeApi(cfg.NOVEL_API_URL);
-		serviceApi = decodeApi(cfg.SERVICE_API_URL);
+		const cfg = await getIni('/settings/global.ini');
+		if (cfg?.JsonData) jsonPostsPath = cfg.JsonData.replace(/^\//, '');
+		if (cfg?.JsonService) jsonSvcPath = cfg.JsonService.replace(/^\//, '');
+		if (cfg?.updateGithub_URL) authUrl = cfg.updateGithub_URL;
 	} catch (e) { setStatus('⚠️ INI 載入失敗：' + e.message, 'orange'); }
 	renderOplog();
 
@@ -385,7 +452,7 @@ export async function initAdmin(sess) {
 				return;
 			}
 			try {
-				const token = await ensureGithubToken();
+				const token = await ensurePat();
 				const r = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GHOST_REPO}/contents/${b.dataset.del}`, {
 					method: 'DELETE', headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
 					body: JSON.stringify({ message: `Delete ${b.dataset.del} (admin)`, sha: b.dataset.sha })
@@ -399,9 +466,9 @@ export async function initAdmin(sess) {
 	};
 
 	$('healthBtn').onclick = healthCheck;
-	$('syncPostsBtn').onclick = syncPostsJson;
+	$('syncPostsBtn').onclick = rebuildVersion;
 	$('clearCacheBtn').onclick = () => {
-		['cached_novel_data', 'cache_notices', 'cache_services'].forEach(k => localStorage.removeItem(k));
+		['cached_novel_data', 'cache_notices', 'cache_services', 'data_ver'].forEach(k => localStorage.removeItem(k));
 		setStatus('✅ 本機快取已清除（前台下次開啟會重抓）', 'green');
 		logOp('清除快取', '');
 	};

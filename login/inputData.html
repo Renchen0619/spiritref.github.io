@@ -38,8 +38,8 @@
 	<div id="adminUser" style="font-size:12px;margin:8px 0 0;color:#8b7355;">驗證登入中...</div>
 	
 	<div class="field">
-		<label>Admin 上傳密碼</label>
-		<input type="password" id="token" placeholder="請輸入密碼">
+		<label>管理密碼（送 GAS 換 GitHub token）</label>
+		<input type="password" id="token" placeholder="請輸入管理密碼">
 	</div>
 
 	<div class="file-area">
@@ -70,8 +70,7 @@
 		<input type="text" id="pic" placeholder="pic/example.jpg">
 	</div>
 
-	<button onclick="sendData()">2. 確認匯入資料庫（自動同步 JSON）</button>
-	<button class="btn-upload" onclick="syncJsonToGithub()">3. 手動重試：同步全量 JSON 到 GitHub</button>
+	<button onclick="sendData()">2. 確認發佈（直接寫入 GitHub）</button>
 	<div id="status"></div>
 </div>
 
