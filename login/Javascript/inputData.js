@@ -1,4 +1,4 @@
-import { getSession } from './adminAuth.js';
+import { getSession } from './adminAuth.js?v=20261011';
 
 async function requireSession() {
 	const session = await getSession();
