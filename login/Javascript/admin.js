@@ -1,4 +1,4 @@
-import { getIni } from '/Javascript/global.js';
+import { getIni } from '/Javascript/global.js?v=20261011';
 
 // 資料庫 = GitHub 靜態 JSON（不再經 GAS）
 // 文章 -> spiritref.github.io/Data/postFB.json
@@ -14,7 +14,8 @@ let jsonPostsPath = 'Data/postFB.json';
 let jsonSvcPath = '';
 let allPosts = [];
 let allSvc = [];
-let editing = null; // {kind:'post'|'svc'}
+let allNotices = [];
+let editing = null; // {kind:'post'|'svc'|'notice'}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -171,6 +172,69 @@ function renderPosts() {
 	}).join('') || '<tr><td colspan="4">無資料</td></tr>';
 }
 
+// ---------- 公告（獨立頁籤＋置頂） ----------
+function sortPinned(arr) {
+	arr.sort((a, b) => ((b['置頂'] === true) - (a['置頂'] === true)) || (new Date(b['發佈日期']) - new Date(a['發佈日期'])));
+}
+
+async function loadNotices() {
+	$('noticeRows').innerHTML = '<tr><td colspan="4">載入中...</td></tr>';
+	try {
+		const d = await fetchJson('/' + jsonPostsPath);
+		allNotices = d.filter(i => String(i['標題'] || '').includes('公告'));
+		sortPinned(allNotices);
+	} catch (e) {
+		allNotices = [];
+		setStatus('⚠️ 公告讀取失敗：' + e.message, 'orange');
+	}
+	renderNoticesAdmin();
+}
+
+function renderNoticesAdmin() {
+	$('noticeCount').innerText = `共 ${allNotices.length} 筆`;
+	$('noticeRows').innerHTML = allNotices.map((it, idx) => {
+		const pinned = it['置頂'] === true;
+		return `<tr><td style="white-space:nowrap;">
+				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '📌已置頂' : '置頂'}</button>
+			</td><td>${esc(it['PostID'] ?? '')}</td>
+			<td class="title">${esc(it['標題'] || '')}</td>
+			<td style="white-space:nowrap;">
+				<button class="rowbtn" data-nact="edit" data-i="${idx}">編輯</button>
+				<button class="rowbtn" data-nact="del" data-i="${idx}">刪除</button>
+			</td></tr>`;
+	}).join('') || '<tr><td colspan="4">無資料</td></tr>';
+}
+
+async function togglePin(idx, btn) {
+	const it = allNotices[idx];
+	setStatus('⏳ 更新置頂中...', 'blue');
+	try {
+		const pat = await ensurePat();
+		const to = !(it['置頂'] === true);
+		const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
+			(arr) => arr.map(p => String(p['PostID']) === String(it['PostID']) ? { ...p, '置頂': to } : p),
+			`${to ? 'Pin' : 'Unpin'} notice ${it['PostID']} (admin)`);
+		await bumpVersion(pat, 'posts', next.length);
+		logOp(to ? '置頂公告' : '取消置頂', `${it['PostID']}`);
+		setStatus('✅ 已更新', 'green');
+		await loadNotices();
+	} catch (e) { setStatus('❌ 置頂失敗：' + e.message, 'red'); }
+}
+
+function openNoticeEditor(idx) {
+	const src = allNotices[idx];
+	editing = { kind: 'notice', idx };
+	$('modalTitle').innerText = `編輯公告（${src['PostID'] ?? ''}）`;
+	$('modalFields').innerHTML = [['標題', 'text'], ['發佈日期', 'text'], ['貼文內容', 'textarea']].map(([k, t]) => {
+		const v = src[k] ?? '';
+		return `<label>${k}</label>` + (t === 'textarea'
+			? `<textarea data-k="${k}">${esc(v)}</textarea>`
+			: `<input data-k="${k}" value="${esc(String(v)).replace(/"/g, '&quot;')}">`);
+	}).join('');
+	$('previewBox').style.display = 'none';
+	$('modal').classList.add('open');
+}
+
 // ---------- 服務內容 ----------
 async function loadSvc() {
 	$('svcRows').innerHTML = '<tr><td colspan="3">載入中...</td></tr>';
@@ -249,6 +313,15 @@ async function saveEdit() {
 			logOp('編輯文章', `${pid} ${f['標題'] || ''}`);
 			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
 			await loadPosts();
+		} else if (editing.kind === 'notice') {
+			const pid = allNotices[editing.idx]['PostID'];
+			const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath, (arr) =>
+				arr.map(p => String(p['PostID']) === String(pid) ? { ...p, ...f } : p),
+				`Edit notice ${pid} (admin)`);
+			await bumpVersion(pat, 'posts', next.length);
+			logOp('編輯公告', `${pid} ${f['標題'] || ''}`);
+			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
+			await loadNotices();
 		} else {
 			const cat = $('svcCat').value;
 			const isNovel = cat === '公告';
@@ -269,6 +342,28 @@ async function saveEdit() {
 	} catch (e) {
 		setStatus('❌ 儲存失敗：' + e.message, 'red');
 	}
+}
+
+async function delNotice(idx, btn) {
+	if (!btn.dataset.armed) {
+		btn.dataset.armed = '1';
+		btn.classList.add('confirm');
+		btn.innerText = '確認刪除？';
+		setTimeout(() => { btn.dataset.armed = ''; btn.classList.remove('confirm'); btn.innerText = '刪除'; }, 5000);
+		return;
+	}
+	setStatus('⏳ 刪除中...', 'blue');
+	try {
+		const pat = await ensurePat();
+		const pid = allNotices[idx]['PostID'];
+		const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
+			(arr) => arr.filter(p => String(p['PostID']) !== String(pid)),
+			`Delete notice ${pid} (admin)`);
+		await bumpVersion(pat, 'posts', next.length);
+		logOp('刪除公告', `${pid}`);
+		setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
+		await loadNotices();
+	} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
 }
 
 async function delItem(kind, idx, btn) {
@@ -425,6 +520,14 @@ export async function initAdmin(sess) {
 	};
 	$('svcCat').onchange = loadSvc;
 	$('svcReload').onclick = loadSvc;
+	$('noticeReload').onclick = loadNotices;
+	$('noticeRows').onclick = (e) => {
+		const b = e.target.closest('button'); if (!b) return;
+		const i = Number(b.dataset.i);
+		if (b.dataset.nact === 'pin') togglePin(i);
+		else if (b.dataset.nact === 'edit') openNoticeEditor(i);
+		else if (b.dataset.nact === 'del') delNotice(i, b);
+	};
 	$('svcRows').onclick = (e) => {
 		const b = e.target.closest('button'); if (!b) return;
 		const i = Number(b.dataset.i);
@@ -474,5 +577,6 @@ export async function initAdmin(sess) {
 	};
 
 	await loadPosts();
+	await loadNotices();
 	await loadSvc();
 }

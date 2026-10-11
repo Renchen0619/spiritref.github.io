@@ -1,4 +1,4 @@
-import { getIni } from '/Javascript/global.js';
+import { getIni } from '/Javascript/global.js?v=20261011';
 
 // 集中管理：優先讀 /settings/global.ini 的 SUPABASE_URL / SUPABASE_ANON_KEY，
 // INI 失效時才用下方備援值（換專案只改 INI 即可，不用動程式）。

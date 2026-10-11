@@ -64,6 +64,7 @@
 
 	<div class="tabs">
 		<button data-tab="posts" class="active">📖 文章</button>
+		<button data-tab="notices">📢 公告</button>
 		<button data-tab="services">📜 服務內容</button>
 		<button data-tab="images">🖼️ 圖片</button>
 		<button data-tab="sys">🩺 系統狀態</button>
@@ -79,6 +80,18 @@
 		<div style="overflow-x:auto;">
 		<table class="data"><thead><tr><th>ID</th><th>日期</th><th>標題</th><th>操作</th></tr></thead>
 		<tbody id="postRows"><tr><td colspan="4">載入中...</td></tr></tbody></table>
+		</div>
+	</section>
+
+	<section id="tab-notices" class="panel">
+		<div class="toolbar">
+			<button id="noticeReload" class="ghost">重新載入</button>
+			<span style="font-size:13px;">📌 置頂的公告會排在最前面（三處前台同步）。</span>
+			<span id="noticeCount"></span>
+		</div>
+		<div style="overflow-x:auto;">
+		<table class="data"><thead><tr><th>置頂</th><th>ID</th><th>標題</th><th>操作</th></tr></thead>
+		<tbody id="noticeRows"><tr><td colspan="4">載入中...</td></tr></tbody></table>
 		</div>
 	</section>
 
@@ -142,8 +155,8 @@
 	}, 8000);
 </script>
 <script type="module">
-	import { requireAdmin, logoutAndGo, onAuthChange } from './Javascript/adminAuth.js';
-	import { initAdmin } from './Javascript/admin.js';
+	import { requireAdmin, logoutAndGo, onAuthChange } from './Javascript/adminAuth.js?v=20261011';
+	import { initAdmin } from './Javascript/admin.js?v=20261011';
 	try {
 		const session = await requireAdmin('login.html');
 		if (session) {

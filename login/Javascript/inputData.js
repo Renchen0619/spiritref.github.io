@@ -99,11 +99,41 @@ function updateTime() {
 	}
 }
 
+function resetForm() {
+	document.getElementById('title').value = "【】";
+	document.getElementById('content').value = "";
+	document.getElementById('pic').value = "";
+	document.getElementById('fileInput').value = "";
+	updateTime();
+	const t = document.getElementById('title');
+	t.focus();
+	try { t.setSelectionRange(1, 1); } catch (e) {}
+}
+
 async function initApp() {
 	try {
+		if (!document.getElementById('title').value) {
+			document.getElementById('title').value = "【】";
+		}
 		updateTime();
 	} catch (e) {}
 }
+
+// 手動取得 GitHub token（無 token 時按；發文/上傳時也會自動取）
+window.fetchToken = async function() {
+	const session = await requireSession();
+	if (!session) return;
+	const status = document.getElementById('status');
+	try {
+		finalToken = '';
+		await getToken(status);
+		status.innerText = "✅ Token 已取得，同分頁有效。";
+		status.style.color = "green";
+	} catch (e) {
+		status.innerText = "❌ " + e.message;
+		status.style.color = "red";
+	}
+};
 
 // --- 核心功能：多檔案上傳（直傳 ghoststory/pic） ---
 window.uploadToGithub = async function() {
@@ -121,7 +151,6 @@ window.uploadToGithub = async function() {
 	if (!pat) return;
 
 	const fileInput = document.getElementById('fileInput');
-	const status = document.getElementById('status');
 	const picInput = document.getElementById('pic');
 
 	if (fileInput.files.length === 0) { alert("請先選擇檔案！"); return; }
@@ -205,7 +234,6 @@ window.sendData = async function() {
 	}
 	if (!pat) return;
 
-	const status = document.getElementById('status');
 	const title = document.getElementById('title').value.trim();
 	const content = document.getElementById('content').value;
 	const dateVal = document.getElementById('date').value;
@@ -254,11 +282,7 @@ window.sendData = async function() {
 		status.innerText = "✅ 已發佈！前台約 1~3 分鐘生效。";
 		status.style.color = "green";
 
-		document.getElementById('title').value = "";
-		document.getElementById('content').value = "";
-		document.getElementById('pic').value = "";
-		document.getElementById('fileInput').value = "";
-		updateTime();
+		resetForm();
 	} catch (e) {
 		status.innerText = "❌ 發佈失敗：" + e.message;
 		console.error(e);
