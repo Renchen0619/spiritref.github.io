@@ -34,7 +34,7 @@
 		.rowbtn { padding: 4px 10px; margin: 1px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 13px; }
 		.rowbtn:hover { border-color: #8b7355; color: #8b7355; }
 		.rowbtn.confirm { background: #b04a3a; color: #fff; border-color: #b04a3a; }
-		#status { margin-top: 12px; font-weight: bold; font-size: 14px; white-space: pre-line; }
+		#status { position: fixed; right: 16px; bottom: 16px; z-index: 100; max-width: 320px; background: rgba(30, 28, 25, 0.92); color: #ffe9b8; font-weight: bold; font-size: 13px; white-space: pre-line; padding: 12px 14px; border-radius: 10px; border: 1px solid #d4af37; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: none; }
 		#modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 30px 10px; }
 		#modal.open { display: flex; }
 		#modalCard { background: #fffdf8; border-radius: 12px; border: 1px solid #dcbfa2; max-width: 640px; width: 100%; padding: 20px; }
@@ -75,6 +75,9 @@
 			<input id="postSearch" placeholder="🔍 搜尋標題/內容..." style="flex:1;min-width:160px;">
 			<button id="postReload" class="ghost">重新載入</button>
 			<button id="postBackup" class="ghost">⬇ 備份 JSON</button>
+			<button id="postPrev" class="ghost">◀</button>
+			<span id="postPageInfo"></span>
+			<button id="postNext" class="ghost">▶</button>
 			<span id="postCount"></span>
 		</div>
 		<div style="overflow-x:auto;">

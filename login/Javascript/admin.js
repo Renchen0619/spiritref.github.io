@@ -16,14 +16,16 @@ let allPosts = [];
 let allSvc = [];
 let allNotices = [];
 let editing = null; // {kind:'post'|'svc'|'notice'}
+let postPage = 1;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-function setStatus(msg, color = '#4a2e1b') {
+function setStatus(msg, color = '#d4af37') {
 	const el = $('status');
-	el.innerText = msg;
-	el.style.color = color;
+	el.innerText = msg || '';
+	el.style.display = msg ? 'block' : 'none';
+	el.style.borderColor = color;
 }
 
 // 管理密碼 = 原本邏輯：送 GAS 換 GitHub token（圖片＋JSON＋刪除共用）
@@ -124,20 +126,61 @@ async function bumpVersion(pat, section, count) {
 	} catch (e) { console.warn('版本戳寫入失敗（不影響本體）:', e); }
 }
 
+const OPLOG_PATH = 'Data/admin-oplog.json';
+const OPLOG_KEEP_MS = 90 * 24 * 3600 * 1000; // 只保留3個月
+
 function logOp(event, detail) {
+	const entry = { t: new Date().toISOString(), admin: session?.user?.email || '?', event, detail: detail || '' };
 	try {
 		const arr = JSON.parse(localStorage.getItem('admin_oplog') || '[]');
-		arr.unshift(`${new Date().toLocaleString()} [${session?.user?.email || '?'}] ${event} ${detail || ''}`);
+		arr.unshift(entry);
 		localStorage.setItem('admin_oplog', JSON.stringify(arr.slice(0, 200)));
-		renderOplog();
 	} catch (e) {}
+	renderOplog();
+	// best-effort 寫進 repo（共用、多裝置可見）；失敗不影響主流程
+	pushRemoteLog(entry).catch(() => {});
+}
+
+async function pushRemoteLog(entry) {
+	if (!finalToken) return;
+	const cutoff = Date.now() - OPLOG_KEEP_MS;
+	const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${OPLOG_PATH}`;
+	const h = ghHeaders(finalToken);
+	let sha = null;
+	let arr = [];
+	try {
+		const g = await fetch(api, { headers: h });
+		if (g.ok) {
+			const j = await g.json();
+			sha = j.sha;
+			const parsed = JSON.parse(fromB64(j.content));
+			if (Array.isArray(parsed)) arr = parsed;
+		}
+	} catch (e) { return; }
+	arr = arr.filter(e => e && (Date.now() - new Date(e.t).getTime()) < cutoff);
+	arr.unshift(entry);
+	const body = { message: `oplog: ${entry.event}`, content: toB64(JSON.stringify(arr.slice(0, 500), null, 1)) };
+	if (sha) body.sha = sha;
+	await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
 }
 
 function renderOplog() {
+	const fmt = (e) => typeof e === 'string' ? e : `${new Date(e.t).toLocaleString()} [${e.admin || '?'}] ${e.event || ''} ${e.detail || ''}`;
 	try {
 		const arr = JSON.parse(localStorage.getItem('admin_oplog') || '[]');
-		$('oplog').innerText = arr.length ? arr.join('\n') : '（空）';
+		$('oplog').innerText = arr.length ? arr.map(fmt).join('\n') : '（空）';
 	} catch (e) {}
+	// 有共用檔就以它為準（多管理員、多裝置同步＋3個月過期）
+	fetch(`https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${OPLOG_PATH}`)
+		.then(r => r.ok ? r.json() : null)
+		.then(j => {
+			if (!j) return;
+			const arr = JSON.parse(fromB64(j.content));
+			if (!Array.isArray(arr)) return;
+			const cutoff = Date.now() - OPLOG_KEEP_MS;
+			const list = arr.filter(e => e && (Date.now() - new Date(e.t).getTime()) < cutoff);
+			if (list.length) $('oplog').innerText = list.map(fmt).join('\n');
+		}).catch(() => {});
 }
 
 // ---------- 文章 ----------
@@ -158,8 +201,14 @@ async function loadPosts() {
 function renderPosts() {
 	const term = ($('postSearch').value || '').toLowerCase();
 	const list = allPosts.filter(p => !term || String(p['標題'] || '').toLowerCase().includes(term) || String(p['貼文內容'] || '').toLowerCase().includes(term));
+	const PAGE = 10;
+	const maxPage = Math.max(1, Math.ceil(list.length / PAGE));
+	if (postPage > maxPage) postPage = maxPage;
+	if (postPage < 1) postPage = 1;
+	const page = list.slice((postPage - 1) * PAGE, postPage * PAGE);
 	$('postCount').innerText = `共 ${list.length} 筆`;
-	$('postRows').innerHTML = list.map((p) => {
+	$('postPageInfo').innerText = `${postPage}/${maxPage}`;
+	$('postRows').innerHTML = page.map((p) => {
 		const pid = p['PostID'] ?? '';
 		const idx = allPosts.indexOf(p);
 		return `<tr><td>${esc(pid)}</td><td style="white-space:nowrap;">${esc(p['發佈日期'] || '')}</td>
@@ -195,7 +244,7 @@ function renderNoticesAdmin() {
 	$('noticeRows').innerHTML = allNotices.map((it, idx) => {
 		const pinned = it['置頂'] === true;
 		return `<tr><td style="white-space:nowrap;">
-				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '📌已置頂' : '置頂'}</button>
+				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '取消置頂' : '📌置頂'}</button>
 			</td><td>${esc(it['PostID'] ?? '')}</td>
 			<td class="title">${esc(it['標題'] || '')}</td>
 			<td style="white-space:nowrap;">
@@ -216,8 +265,11 @@ async function togglePin(idx, btn) {
 			`${to ? 'Pin' : 'Unpin'} notice ${it['PostID']} (admin)`);
 		await bumpVersion(pat, 'posts', next.length);
 		logOp(to ? '置頂公告' : '取消置頂', `${it['PostID']}`);
-		setStatus('✅ 已更新', 'green');
-		await loadNotices();
+		// 本地直接更新（靜態檔要等 Pages 部署，不重讀）
+		it['置頂'] = to;
+		sortPinned(allNotices);
+		renderNoticesAdmin();
+		setStatus('✅ 已更新，前台約 1~3 分鐘生效', 'green');
 	} catch (e) { setStatus('❌ 置頂失敗：' + e.message, 'red'); }
 }
 
@@ -252,6 +304,10 @@ async function loadSvc() {
 		allSvc = [];
 		setStatus('⚠️ 服務 JSON 讀取失敗：' + e.message, 'orange');
 	}
+	renderSvcRows();
+}
+
+function renderSvcRows() {
 	$('svcCount').innerText = `共 ${allSvc.length} 筆`;
 	$('svcRows').innerHTML = allSvc.map((it, idx) => `<tr><td>${esc(it['PostID'] ?? idx + 1)}</td>
 		<td class="title">${esc(it['標題'] || '')}</td>
@@ -311,8 +367,9 @@ async function saveEdit() {
 				`Edit post ${pid} (admin)`);
 			await bumpVersion(pat, 'posts', next.length);
 			logOp('編輯文章', `${pid} ${f['標題'] || ''}`);
+			allPosts[editing.idx] = { ...allPosts[editing.idx], ...f };
+			renderPosts();
 			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
-			await loadPosts();
 		} else if (editing.kind === 'notice') {
 			const pid = allNotices[editing.idx]['PostID'];
 			const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath, (arr) =>
@@ -320,8 +377,10 @@ async function saveEdit() {
 				`Edit notice ${pid} (admin)`);
 			await bumpVersion(pat, 'posts', next.length);
 			logOp('編輯公告', `${pid} ${f['標題'] || ''}`);
+			allNotices[editing.idx] = { ...allNotices[editing.idx], ...f };
+			sortPinned(allNotices);
+			renderNoticesAdmin();
 			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
-			await loadNotices();
 		} else {
 			const cat = $('svcCat').value;
 			const isNovel = cat === '公告';
@@ -334,8 +393,9 @@ async function saveEdit() {
 				`Edit ${cat} (admin)`);
 			await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
 			logOp('編輯服務內容', `${cat} ${f['標題'] || ''}`);
+			allSvc[editing.idx] = { ...allSvc[editing.idx], ...f };
+			renderSvcRows();
 			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
-			await loadSvc();
 		}
 		$('modal').classList.remove('open');
 		editing = null;
@@ -361,8 +421,9 @@ async function delNotice(idx, btn) {
 			`Delete notice ${pid} (admin)`);
 		await bumpVersion(pat, 'posts', next.length);
 		logOp('刪除公告', `${pid}`);
+		allNotices.splice(idx, 1);
+		renderNoticesAdmin();
 		setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
-		await loadNotices();
 	} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
 }
 
@@ -378,8 +439,9 @@ async function delItem(kind, idx, btn) {
 					`Delete post ${pid} (admin)`);
 				await bumpVersion(pat, 'posts', next.length);
 				logOp('刪除文章', `${pid}`);
+				allPosts.splice(idx, 1);
+				renderPosts();
 				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
-				await loadPosts();
 			} else {
 				const cat = $('svcCat').value;
 				const isNovel = cat === '公告';
@@ -391,8 +453,9 @@ async function delItem(kind, idx, btn) {
 					`Delete ${cat} (admin)`);
 				await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
 				logOp('刪除服務內容', `${cat} ${it['標題'] || ''}`);
+				allSvc.splice(idx, 1);
+				renderSvcRows();
 				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
-				await loadSvc();
 			}
 		} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
 		return;
@@ -501,8 +564,10 @@ export async function initAdmin(sess) {
 		$('tab-' + b.dataset.tab).classList.add('active');
 	});
 
-	$('postSearch').oninput = renderPosts;
+	$('postSearch').oninput = () => { postPage = 1; renderPosts(); };
 	$('postReload').onclick = loadPosts;
+	$('postPrev').onclick = () => { postPage--; renderPosts(); };
+	$('postNext').onclick = () => { postPage++; renderPosts(); };
 	$('postBackup').onclick = () => {
 		const blob = new Blob([JSON.stringify(allPosts, null, 1)], { type: 'application/json' });
 		const a = document.createElement('a');
