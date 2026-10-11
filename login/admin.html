@@ -54,6 +54,12 @@
 <div id="gateMsg">🔒 驗證登入中...</div>
 
 <div id="adminRoot">
+	<div id="savebar" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:200;background:rgba(30,28,25,0.95);color:#ffe9b8;font-weight:bold;font-size:14px;padding:10px 16px;border-radius:10px;border:1px solid #d4af37;box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+		<span id="dirtyCount"></span>
+		<button id="saveAllBtn" class="rowbtn" style="margin-left:8px;">儲存</button>
+		<button id="discardBtn" class="rowbtn" style="margin-left:4px;">取消</button>
+	</div>
+
 	<div class="topbar">
 		<h2>🛠️ 管理後台</h2>
 		<input type="password" id="adminPwd" placeholder="管理密碼（送 GAS 換 token）">
@@ -89,6 +95,10 @@
 	<section id="tab-notices" class="panel">
 		<div class="toolbar">
 			<button id="noticeReload" class="ghost">重新載入</button>
+			<button id="noticeAdd">＋ 新增公告</button>
+			<button id="noticePrev" class="ghost">◀</button>
+			<span id="noticePageInfo"></span>
+			<button id="noticeNext" class="ghost">▶</button>
 			<span style="font-size:13px;">📌 置頂的公告會排在最前面（三處前台同步）。</span>
 			<span id="noticeCount"></span>
 		</div>
@@ -101,12 +111,15 @@
 	<section id="tab-services" class="panel">
 		<div class="toolbar">
 			<select id="svcCat">
-				<option value="公告">公告（日誌庫）</option>
 				<option value="服務項目">服務項目</option>
 				<option value="超自然現象彙典">超自然現象彙典</option>
 				<option value="視覺紀錄">視覺紀錄</option>
 			</select>
 			<button id="svcReload" class="ghost">重新載入</button>
+			<button id="svcAdd">＋ 新增</button>
+			<button id="svcPrev" class="ghost">◀</button>
+			<span id="svcPageInfo"></span>
+			<button id="svcNext" class="ghost">▶</button>
 			<span id="svcCount"></span>
 		</div>
 		<div style="overflow-x:auto;">
@@ -153,7 +166,7 @@
 	setTimeout(function() {
 		if (!window.__adminGated) {
 			var m = document.getElementById('gateMsg');
-			if (m) m.innerHTML = '⚠️ 驗證元件載入失敗，請檢查網路後重整。<br><a href="login.html">前往登入頁</a>';
+			if (m) m.innerHTML = '⚠️ 驗證元件載入失敗，請檢查網路後重整。<br><a href="./">前往登入頁</a>';
 		}
 	}, 8000);
 </script>
@@ -161,7 +174,7 @@
 	import { requireAdmin, logoutAndGo, onAuthChange } from './Javascript/adminAuth.js?v=20261011';
 	import { initAdmin } from './Javascript/admin.js?v=20261011';
 	try {
-		const session = await requireAdmin('login.html');
+		const session = await requireAdmin('./');
 		if (session) {
 			document.getElementById('adminUser').innerText = '已登入：' + (session.user?.email || '');
 			document.getElementById('adminRoot').style.display = 'block';
@@ -170,10 +183,10 @@
 			await initAdmin(session);
 		}
 	} catch (e) {
-		document.getElementById('gateMsg').innerHTML = '⚠️ 驗證失敗：' + (e?.message || e) + '<br><a href="login.html">前往登入頁</a>';
+		document.getElementById('gateMsg').innerHTML = '⚠️ 驗證失敗：' + (e?.message || e) + '<br><a href="./">前往登入頁</a>';
 	}
-	document.getElementById('logoutBtn').onclick = () => logoutAndGo('login.html');
-	onAuthChange((_event, s) => { if (!s) location.replace('login.html'); });
+	document.getElementById('logoutBtn').onclick = () => logoutAndGo('./');
+	onAuthChange((_event, s) => { if (!s) location.replace('./'); });
 </script>
 
 </body>

@@ -28,7 +28,7 @@ export async function getSession() {
 }
 
 // 無 session 時踢回登入頁（帶 next，登入後回到原頁），回傳 session
-export async function requireAdmin(loginPage = 'login.html') {
+export async function requireAdmin(loginPage = './') {
 	const session = await getSession();
 	if (!session) {
 		const next = location.pathname.split('/').pop() || 'admin.html';
@@ -42,7 +42,7 @@ export async function getAccessToken() {
 	return (await getSession())?.access_token || '';
 }
 
-export async function logoutAndGo(loginPage = 'login.html') {
+export async function logoutAndGo(loginPage = './') {
 	const sb = await getSupabase();
 	await sb.auth.signOut();
 	location.replace(loginPage);

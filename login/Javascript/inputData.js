@@ -3,7 +3,7 @@ import { getSession } from './adminAuth.js?v=20261011';
 async function requireSession() {
 	const session = await getSession();
 	if (!session) {
-		location.replace('login.html');
+		location.replace('./');
 		return null;
 	}
 	return session;

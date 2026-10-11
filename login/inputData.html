@@ -81,14 +81,14 @@
 	setTimeout(function() {
 		if (!window.__adminGated) {
 			var m = document.getElementById('gateMsg');
-			if (m) m.innerHTML = '⚠️ 驗證元件載入失敗，請檢查網路後重整。<br><a href="login.html">前往登入頁</a>';
+			if (m) m.innerHTML = '⚠️ 驗證元件載入失敗，請檢查網路後重整。<br><a href="./">前往登入頁</a>';
 		}
 	}, 8000);
 </script>
 <script type="module">
 	import { requireAdmin, logoutAndGo, onAuthChange } from './Javascript/adminAuth.js?v=20261011';
 	try {
-		const session = await requireAdmin('login.html');
+		const session = await requireAdmin('./');
 		if (session) {
 			document.getElementById('adminUser').innerText = '已登入：' + (session.user?.email || '');
 			document.getElementById('adminCard').style.display = 'block';
@@ -96,11 +96,11 @@
 			window.__adminGated = true;
 		}
 	} catch (e) {
-		document.getElementById('gateMsg').innerHTML = '⚠️ 驗證失敗：' + (e?.message || e) + '<br><a href="login.html">前往登入頁</a>';
+		document.getElementById('gateMsg').innerHTML = '⚠️ 驗證失敗：' + (e?.message || e) + '<br><a href="./">前往登入頁</a>';
 	}
-	document.getElementById('logoutBtn').onclick = () => logoutAndGo('login.html');
+	document.getElementById('logoutBtn').onclick = () => logoutAndGo('./');
 	onAuthChange((_event, s) => {
-		if (!s) location.replace('login.html');
+		if (!s) location.replace('./');
 	});
 </script>
 

@@ -17,6 +17,27 @@ let allSvc = [];
 let allNotices = [];
 let editing = null; // {kind:'post'|'svc'|'notice'}
 let postPage = 1;
+let svcPage = 1;
+let noticePage = 1;
+const ADMIN_PAGE = 10;
+// 暫存制：異動先記帳，按儲存才一次寫入
+let pendingOps = [];
+let pendingLogs = [];
+
+function markDirty() {
+	updateSaveBar();
+}
+
+function updateSaveBar() {
+	const n = pendingOps.length;
+	$('savebar').style.display = n ? 'block' : 'none';
+	$('dirtyCount').innerText = n ? `未儲存變更 ${n} 筆` : '';
+}
+
+function stage(file, op) {
+	pendingOps.push({ file, ...op });
+	markDirty();
+}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -126,6 +147,115 @@ async function bumpVersion(pat, section, count) {
 	} catch (e) { console.warn('版本戳寫入失敗（不影響本體）:', e); }
 }
 
+// 暫存記帳的操作套用到新抓的陣列（儲存時一次結算）
+function matchItem(p, m) {
+	if (!m) return false;
+	if (m.PostID !== undefined) return String(p['PostID']) === String(m.PostID);
+	if (m.keyTitle !== undefined) return p['標題'] === m.keyTitle;
+	return false;
+}
+
+function applyOps(arr, ops) {
+	let out = [...arr];
+	for (const o of ops) {
+		if (o.type === 'append') {
+			const maxId = out.reduce((m, p) => Math.max(m, Number(p.PostID) || 0), 0);
+			const e = { ...o.entry };
+			if (e.PostID === undefined && out.some(p => p.PostID !== undefined)) e.PostID = maxId + 1;
+			out.push(e);
+		} else if (o.type === 'update') {
+			out = out.map(p => matchItem(p, o.match) ? { ...p, ...o.fields } : p);
+		} else if (o.type === 'delete') {
+			out = out.filter(p => !matchItem(p, o.match));
+		} else if (o.type === 'move') {
+			const from = out.findIndex(p => matchItem(p, o.match));
+			const to = from + o.dir;
+			if (from >= 0 && to >= 0 && to < out.length) {
+				const [m] = out.splice(from, 1);
+				out.splice(to, 0, m);
+			}
+		} else if (o.type === 'pin') {
+			out = out.map(p => matchItem(p, o.match) ? { ...p, '置頂': o.to } : p);
+		}
+	}
+	return out;
+}
+
+// 儲存：各檔一次寫入＋版本戳＋操作紀錄一次結算
+async function saveAll() {
+	if (!pendingOps.length && !pendingLogs.length) return;
+	setStatus('⏳ 儲存中...', 'blue');
+	try {
+		const pat = await ensurePat();
+		const files = [...new Set(pendingOps.map(o => o.file))];
+		for (const file of files) {
+			const path = file === 'posts' ? jsonPostsPath : jsonSvcPath;
+			const next = await ghModifyJson(pat, JSON_REPO, path,
+				(arr) => applyOps(arr, pendingOps.filter(o => o.file === file)),
+				`Admin save ${file} (${pendingOps.filter(o => o.file === file).length} ops)`);
+			await bumpVersion(pat, file, next.length);
+			if (file === 'posts') {
+				try {
+					allPosts = next;
+					allNotices = next.filter(i => String(i['標題'] || '').includes('公告'));
+					sortPinned(allNotices);
+					renderPosts();
+					renderNoticesAdmin();
+				} catch (e) {}
+			} else {
+				try {
+					const cat = $('svcCat').value;
+					allSvc = next.filter(i => String(i['分類'] || '') === cat);
+					renderSvcRows();
+				} catch (e) {}
+			}
+		}
+		await flushLogs(pat);
+		pendingOps = [];
+		pendingLogs = [];
+		updateSaveBar();
+		setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
+	} catch (e) {
+		setStatus('❌ 儲存失敗：' + e.message + '（暫存保留，可重試）', 'red');
+	}
+}
+
+async function flushLogs(pat) {
+	if (!pendingLogs.length) return;
+	const cutoff = Date.now() - OPLOG_KEEP_MS;
+	const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${OPLOG_PATH}`;
+	const h = ghHeaders(pat);
+	let sha = null;
+	let arr = [];
+	try {
+		const g = await fetch(api, { headers: h });
+		if (g.ok) {
+			const j = await g.json();
+			sha = j.sha;
+			const parsed = JSON.parse(fromB64(j.content));
+			if (Array.isArray(parsed)) arr = parsed;
+		}
+	} catch (e) {}
+	arr = [...pendingLogs.slice().reverse(), ...arr].filter(e => e && (Date.now() - new Date(e.t).getTime()) < cutoff).slice(0, 500);
+	const body = { message: `oplog: ${pendingLogs.length} entries`, content: toB64(JSON.stringify(arr, null, 1)) };
+	if (sha) body.sha = sha;
+	await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+}
+
+async function discardAll() {
+	pendingOps = [];
+	pendingLogs = [];
+	updateSaveBar();
+	setStatus('⏳ 已捨棄暫存，重新載入...', 'blue');
+	try {
+		await loadPosts();
+		await loadNotices();
+		await loadSvc();
+	} catch (e) {}
+	setStatus('✅ 已還原', 'green');
+	setTimeout(() => setStatus(''), 2000);
+}
+
 const OPLOG_PATH = 'Data/admin-oplog.json';
 const OPLOG_KEEP_MS = 90 * 24 * 3600 * 1000; // 只保留3個月
 
@@ -137,31 +267,9 @@ function logOp(event, detail) {
 		localStorage.setItem('admin_oplog', JSON.stringify(arr.slice(0, 200)));
 	} catch (e) {}
 	renderOplog();
-	// best-effort 寫進 repo（共用、多裝置可見）；失敗不影響主流程
-	pushRemoteLog(entry).catch(() => {});
-}
-
-async function pushRemoteLog(entry) {
-	if (!finalToken) return;
-	const cutoff = Date.now() - OPLOG_KEEP_MS;
-	const api = `https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${OPLOG_PATH}`;
-	const h = ghHeaders(finalToken);
-	let sha = null;
-	let arr = [];
-	try {
-		const g = await fetch(api, { headers: h });
-		if (g.ok) {
-			const j = await g.json();
-			sha = j.sha;
-			const parsed = JSON.parse(fromB64(j.content));
-			if (Array.isArray(parsed)) arr = parsed;
-		}
-	} catch (e) { return; }
-	arr = arr.filter(e => e && (Date.now() - new Date(e.t).getTime()) < cutoff);
-	arr.unshift(entry);
-	const body = { message: `oplog: ${entry.event}`, content: toB64(JSON.stringify(arr.slice(0, 500), null, 1)) };
-	if (sha) body.sha = sha;
-	await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+	// 遠端共用檔等按儲存一次結算（避免每次操作都觸發部署）
+	pendingLogs.push(entry);
+	markDirty();
 }
 
 function renderOplog() {
@@ -240,8 +348,14 @@ async function loadNotices() {
 }
 
 function renderNoticesAdmin() {
+	const maxPage = Math.max(1, Math.ceil(allNotices.length / ADMIN_PAGE));
+	if (noticePage > maxPage) noticePage = maxPage;
+	if (noticePage < 1) noticePage = 1;
+	const page = allNotices.slice((noticePage - 1) * ADMIN_PAGE, noticePage * ADMIN_PAGE);
 	$('noticeCount').innerText = `共 ${allNotices.length} 筆`;
-	$('noticeRows').innerHTML = allNotices.map((it, idx) => {
+	$('noticePageInfo').innerText = `${noticePage}/${maxPage}`;
+	$('noticeRows').innerHTML = page.map((it) => {
+		const idx = allNotices.indexOf(it);
 		const pinned = it['置頂'] === true;
 		return `<tr><td style="white-space:nowrap;">
 				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '取消置頂' : '📌置頂'}</button>
@@ -256,21 +370,13 @@ function renderNoticesAdmin() {
 
 async function togglePin(idx, btn) {
 	const it = allNotices[idx];
-	setStatus('⏳ 更新置頂中...', 'blue');
-	try {
-		const pat = await ensurePat();
-		const to = !(it['置頂'] === true);
-		const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
-			(arr) => arr.map(p => String(p['PostID']) === String(it['PostID']) ? { ...p, '置頂': to } : p),
-			`${to ? 'Pin' : 'Unpin'} notice ${it['PostID']} (admin)`);
-		await bumpVersion(pat, 'posts', next.length);
-		logOp(to ? '置頂公告' : '取消置頂', `${it['PostID']}`);
-		// 本地直接更新（靜態檔要等 Pages 部署，不重讀）
-		it['置頂'] = to;
-		sortPinned(allNotices);
-		renderNoticesAdmin();
-		setStatus('✅ 已更新，前台約 1~3 分鐘生效', 'green');
-	} catch (e) { setStatus('❌ 置頂失敗：' + e.message, 'red'); }
+	const to = !(it['置頂'] === true);
+	it['置頂'] = to;
+	sortPinned(allNotices);
+	renderNoticesAdmin();
+	stage('posts', { type: 'pin', match: { PostID: it['PostID'] }, to });
+	logOp(to ? '置頂公告' : '取消置頂', `${it['PostID']}`);
+	setStatus('已暫存，按右上儲存才寫入', 'orange');
 }
 
 function openNoticeEditor(idx) {
@@ -283,6 +389,35 @@ function openNoticeEditor(idx) {
 			? `<textarea data-k="${k}">${esc(v)}</textarea>`
 			: `<input data-k="${k}" value="${esc(String(v)).replace(/"/g, '&quot;')}">`);
 	}).join('');
+	$('previewBox').style.display = 'none';
+	$('modal').classList.add('open');
+}
+
+function openNoticeCreator() {
+	editing = { kind: 'notice', idx: -1 };
+	$('modalTitle').innerText = '新增公告';
+	const now = new Date();
+	const pad = (n) => String(n).padStart(2, '0');
+	const nowStr = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+	$('modalFields').innerHTML = [['標題', 'text', '【公告】'], ['發佈日期', 'text', nowStr], ['貼文內容', 'textarea', '']].map(([k, t, v]) => {
+		return `<label>${k}</label>` + (t === 'textarea'
+			? `<textarea data-k="${k}">${esc(v)}</textarea>`
+			: `<input data-k="${k}" value="${esc(String(v)).replace(/"/g, '&quot;')}">`);
+	}).join('');
+	$('previewBox').style.display = 'none';
+	$('modal').classList.add('open');
+}
+
+function openSvcCreator() {
+	editing = { kind: 'svc', idx: -1 };
+	const cat = $('svcCat').value;
+	$('modalTitle').innerText = `新增${cat}`;
+	$('modalFields').innerHTML = `<label>分類（固定為目前頁籤）</label><input value="${esc(cat)}" disabled>`
+		+ fieldDefs('svc').map(([k, t]) => {
+			return `<label>${k}</label>` + (t === 'textarea'
+				? `<textarea data-k="${k}"></textarea>`
+				: `<input data-k="${k}" value="">`);
+		}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
 }
@@ -308,10 +443,19 @@ async function loadSvc() {
 }
 
 function renderSvcRows() {
+	const maxPage = Math.max(1, Math.ceil(allSvc.length / ADMIN_PAGE));
+	if (svcPage > maxPage) svcPage = maxPage;
+	if (svcPage < 1) svcPage = 1;
+	const page = allSvc.slice((svcPage - 1) * ADMIN_PAGE, svcPage * ADMIN_PAGE);
 	$('svcCount').innerText = `共 ${allSvc.length} 筆`;
-	$('svcRows').innerHTML = allSvc.map((it, idx) => `<tr><td>${esc(it['PostID'] ?? idx + 1)}</td>
+	$('svcPageInfo').innerText = `${svcPage}/${maxPage}`;
+	$('svcRows').innerHTML = page.map((it) => {
+		const idx = allSvc.indexOf(it);
+		return `<tr><td>${esc(it['PostID'] ?? idx + 1)}</td>
 		<td class="title">${esc(it['標題'] || '')}</td>
 		<td style="white-space:nowrap;">
+			<button class="rowbtn" data-sact="up" data-i="${idx}">↑</button>
+			<button class="rowbtn" data-sact="down" data-i="${idx}">↓</button>
 			<button class="rowbtn" data-sact="preview" data-i="${idx}">預覽</button>
 			<button class="rowbtn" data-sact="edit" data-i="${idx}">編輯</button>
 			<button class="rowbtn" data-sact="del" data-i="${idx}">刪除</button>
@@ -357,50 +501,56 @@ function showPreview() {
 async function saveEdit() {
 	if (!editing) return;
 	const f = collectFields();
-	setStatus('⏳ 儲存中...', 'blue');
 	try {
-		const pat = await ensurePat();
 		if (editing.kind === 'post') {
 			const pid = allPosts[editing.idx]['PostID'];
-			const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath, (arr) =>
-				arr.map(p => String(p['PostID']) === String(pid) ? { ...p, ...f } : p),
-				`Edit post ${pid} (admin)`);
-			await bumpVersion(pat, 'posts', next.length);
-			logOp('編輯文章', `${pid} ${f['標題'] || ''}`);
 			allPosts[editing.idx] = { ...allPosts[editing.idx], ...f };
 			renderPosts();
-			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
+			stage('posts', { type: 'update', match: { PostID: pid }, fields: f });
+			logOp('編輯文章', `${pid} ${f['標題'] || ''}`);
+			setStatus('已暫存，按上方儲存才寫入', 'orange');
 		} else if (editing.kind === 'notice') {
+			if (editing.idx === -1) {
+				const entry = { "發佈日期": f['發佈日期'] || '', "標題": f['標題'] || '', "貼文內容": f['貼文內容'] || '', "圖片網址": null };
+				stage('posts', { type: 'append', entry });
+				logOp('新增公告', `${f['標題'] || ''}`);
+				allNotices.push(entry);
+				sortPinned(allNotices);
+				renderNoticesAdmin();
+				setStatus('已暫存，按上方儲存才寫入', 'orange');
+			} else {
 			const pid = allNotices[editing.idx]['PostID'];
-			const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath, (arr) =>
-				arr.map(p => String(p['PostID']) === String(pid) ? { ...p, ...f } : p),
-				`Edit notice ${pid} (admin)`);
-			await bumpVersion(pat, 'posts', next.length);
-			logOp('編輯公告', `${pid} ${f['標題'] || ''}`);
 			allNotices[editing.idx] = { ...allNotices[editing.idx], ...f };
 			sortPinned(allNotices);
 			renderNoticesAdmin();
-			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
+			stage('posts', { type: 'update', match: { PostID: pid }, fields: f });
+			logOp('編輯公告', `${pid} ${f['標題'] || ''}`);
+			setStatus('已暫存，按上方儲存才寫入', 'orange');
+			}
 		} else {
 			const cat = $('svcCat').value;
-			const isNovel = cat === '公告';
-			const path = isNovel ? jsonPostsPath : jsonSvcPath;
+			if (editing.idx === -1) {
+				const entry = { "分類": cat, "標題": f['標題'] || '', "貼文內容": f['貼文內容'] || '', "連結": f['連結'] || '' };
+				stage('services', { type: 'append', entry });
+				logOp('新增服務內容', `${cat} ${f['標題'] || ''}`);
+				allSvc.push(entry);
+				renderSvcRows();
+				setStatus('已暫存，按上方儲存才寫入', 'orange');
+			} else {
 			const src = allSvc[editing.idx];
 			const useId = src['PostID'] !== undefined;
-			const origTitle = src['標題'];
-			const next = await ghModifyJson(pat, JSON_REPO, path, (arr) =>
-				arr.map(p => (useId ? String(p['PostID']) === String(src['PostID']) : p['標題'] === origTitle) ? { ...p, ...f } : p),
-				`Edit ${cat} (admin)`);
-			await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
-			logOp('編輯服務內容', `${cat} ${f['標題'] || ''}`);
+			const match = useId ? { PostID: src['PostID'] } : { keyTitle: src['標題'] };
 			allSvc[editing.idx] = { ...allSvc[editing.idx], ...f };
 			renderSvcRows();
-			setStatus('✅ 已儲存，前台約 1~3 分鐘生效', 'green');
+			stage(cat === '公告' ? 'posts' : 'services', { type: 'update', match, fields: f });
+			logOp('編輯服務內容', `${cat} ${f['標題'] || ''}`);
+			setStatus('已暫存，按上方儲存才寫入', 'orange');
+			}
 		}
 		$('modal').classList.remove('open');
 		editing = null;
 	} catch (e) {
-		setStatus('❌ 儲存失敗：' + e.message, 'red');
+		setStatus('❌ 暫存失敗：' + e.message, 'red');
 	}
 }
 
@@ -414,48 +564,47 @@ async function delNotice(idx, btn) {
 	}
 	setStatus('⏳ 刪除中...', 'blue');
 	try {
-		const pat = await ensurePat();
 		const pid = allNotices[idx]['PostID'];
-		const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
-			(arr) => arr.filter(p => String(p['PostID']) !== String(pid)),
-			`Delete notice ${pid} (admin)`);
-		await bumpVersion(pat, 'posts', next.length);
-		logOp('刪除公告', `${pid}`);
 		allNotices.splice(idx, 1);
 		renderNoticesAdmin();
-		setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
+		stage('posts', { type: 'delete', match: { PostID: pid } });
+		logOp('刪除公告', `${pid}`);
+		setStatus('已暫存，按上方儲存才寫入', 'orange');
 	} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
+}
+
+async function moveSvc(idx, dir) {
+	const it = allSvc[idx];
+	const ni = idx + dir;
+	if (ni < 0 || ni >= allSvc.length) return;
+	const useId = it['PostID'] !== undefined;
+	const [m] = allSvc.splice(idx, 1);
+	allSvc.splice(ni, 0, m);
+	renderSvcRows();
+	stage('services', { type: 'move', match: useId ? { PostID: it['PostID'] } : { keyTitle: it['標題'] }, dir });
+	logOp('移動服務順序', `${it['標題'] || ''} ${dir < 0 ? '上移' : '下移'}`);
+	setStatus('已暫存，按上方儲存才寫入', 'orange');
 }
 
 async function delItem(kind, idx, btn) {
 	if (btn.dataset.armed) {
-		setStatus('⏳ 刪除中...', 'blue');
 		try {
-			const pat = await ensurePat();
 			if (kind === 'post') {
 				const pid = allPosts[idx]['PostID'];
-				const next = await ghModifyJson(pat, JSON_REPO, jsonPostsPath,
-					(arr) => arr.filter(p => String(p['PostID']) !== String(pid)),
-					`Delete post ${pid} (admin)`);
-				await bumpVersion(pat, 'posts', next.length);
-				logOp('刪除文章', `${pid}`);
 				allPosts.splice(idx, 1);
 				renderPosts();
-				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
+				stage('posts', { type: 'delete', match: { PostID: pid } });
+				logOp('刪除文章', `${pid}`);
+				setStatus('已暫存，按上方儲存才寫入', 'orange');
 			} else {
 				const cat = $('svcCat').value;
-				const isNovel = cat === '公告';
-				const path = isNovel ? jsonPostsPath : jsonSvcPath;
 				const it = allSvc[idx];
 				const useId = it['PostID'] !== undefined;
-				const next = await ghModifyJson(pat, JSON_REPO, path,
-					(arr) => arr.filter(p => useId ? String(p['PostID']) !== String(it['PostID']) : p['標題'] !== it['標題']),
-					`Delete ${cat} (admin)`);
-				await bumpVersion(pat, isNovel ? 'posts' : 'services', next.length);
-				logOp('刪除服務內容', `${cat} ${it['標題'] || ''}`);
 				allSvc.splice(idx, 1);
 				renderSvcRows();
-				setStatus('✅ 已刪除，前台約 1~3 分鐘生效', 'green');
+				stage(cat === '公告' ? 'posts' : 'services', { type: 'delete', match: useId ? { PostID: it['PostID'] } : { keyTitle: it['標題'] } });
+				logOp('刪除服務內容', `${cat} ${it['標題'] || ''}`);
+				setStatus('已暫存，按上方儲存才寫入', 'orange');
 			}
 		} catch (e) { setStatus('❌ 刪除失敗：' + e.message, 'red'); }
 		return;
@@ -583,8 +732,15 @@ export async function initAdmin(sess) {
 		else if (b.dataset.act === 'preview') { openEditor('post', i); showPreview(); }
 		else if (b.dataset.act === 'del') delItem('post', i, b);
 	};
-	$('svcCat').onchange = loadSvc;
+	$('svcCat').onchange = () => { svcPage = 1; loadSvc(); };
 	$('svcReload').onclick = loadSvc;
+	$('svcAdd').onclick = openSvcCreator;
+	$('svcPrev').onclick = () => { svcPage--; renderSvcRows(); };
+	$('svcNext').onclick = () => { svcPage++; renderSvcRows(); };
+	$('noticeReload').onclick = loadNotices;
+	$('noticeAdd').onclick = openNoticeCreator;
+	$('noticePrev').onclick = () => { noticePage--; renderNoticesAdmin(); };
+	$('noticeNext').onclick = () => { noticePage++; renderNoticesAdmin(); };
 	$('noticeReload').onclick = loadNotices;
 	$('noticeRows').onclick = (e) => {
 		const b = e.target.closest('button'); if (!b) return;
@@ -596,7 +752,9 @@ export async function initAdmin(sess) {
 	$('svcRows').onclick = (e) => {
 		const b = e.target.closest('button'); if (!b) return;
 		const i = Number(b.dataset.i);
-		if (b.dataset.sact === 'edit') openEditor('svc', i);
+		if (b.dataset.sact === 'up') moveSvc(i, -1);
+		else if (b.dataset.sact === 'down') moveSvc(i, 1);
+		else if (b.dataset.sact === 'edit') openEditor('svc', i);
 		else if (b.dataset.sact === 'preview') { openEditor('svc', i); showPreview(); }
 		else if (b.dataset.sact === 'del') delItem('svc', i, b);
 	};
@@ -635,6 +793,14 @@ export async function initAdmin(sess) {
 
 	$('healthBtn').onclick = healthCheck;
 	$('syncPostsBtn').onclick = rebuildVersion;
+	$('saveAllBtn').onclick = saveAll;
+	$('discardBtn').onclick = discardAll;
+	window.addEventListener('beforeunload', (e) => {
+		if (pendingOps.length || pendingLogs.length) {
+			e.preventDefault();
+			e.returnValue = '';
+		}
+	});
 	$('clearCacheBtn').onclick = () => {
 		['cached_novel_data', 'cache_notices', 'cache_services', 'data_ver'].forEach(k => localStorage.removeItem(k));
 		setStatus('✅ 本機快取已清除（前台下次開啟會重抓）', 'green');
