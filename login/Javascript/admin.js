@@ -451,15 +451,16 @@ function renderSvcRows() {
 	$('svcPageInfo').innerText = `${svcPage}/${maxPage}`;
 	$('svcRows').innerHTML = page.map((it) => {
 		const idx = allSvc.indexOf(it);
-		return `<tr><td>${esc(it['PostID'] ?? idx + 1)}</td>
-		<td class="title">${esc(it['標題'] || '')}</td>
-		<td style="white-space:nowrap;">
-			<button class="rowbtn" data-sact="up" data-i="${idx}">↑</button>
-			<button class="rowbtn" data-sact="down" data-i="${idx}">↓</button>
-			<button class="rowbtn" data-sact="preview" data-i="${idx}">預覽</button>
-			<button class="rowbtn" data-sact="edit" data-i="${idx}">編輯</button>
-			<button class="rowbtn" data-sact="del" data-i="${idx}">刪除</button>
-		</td></tr>`).join('') || '<tr><td colspan="3">無資料</td></tr>';
+		return '<tr><td>' + esc(it['PostID'] ?? idx + 1) + '</td>'
+		+ '<td class="title">' + esc(it['標題'] || '') + '</td>'
+		+ '<td style="white-space:nowrap;">'
+		+ '<button class="rowbtn" data-sact="up" data-i="' + idx + '">↑</button>'
+		+ '<button class="rowbtn" data-sact="down" data-i="' + idx + '">↓</button>'
+		+ '<button class="rowbtn" data-sact="preview" data-i="' + idx + '">預覽</button>'
+		+ '<button class="rowbtn" data-sact="edit" data-i="' + idx + '">編輯</button>'
+		+ '<button class="rowbtn" data-sact="del" data-i="' + idx + '">刪除</button>'
+		+ '</td></tr>';
+	}).join('') || '<tr><td colspan="3">無資料</td></tr>';
 }
 
 // ---------- 編輯 Modal ----------
