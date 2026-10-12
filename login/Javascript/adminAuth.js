@@ -35,7 +35,33 @@ export async function requireAdmin(loginPage = './') {
 		location.replace(`${loginPage}?next=${encodeURIComponent(next)}`);
 		return null;
 	}
+	startIdleLogout(loginPage);
 	return session;
+}
+
+// 閒置自動登出（預設 30 分鐘；測試可用 ?idle=秒 覆寫，5~7200）
+function idleMs() {
+	try {
+		const q = Number(new URLSearchParams(location.search).get('idle'));
+		if (q >= 5 && q <= 7200) return q * 1000;
+	} catch (e) {}
+	return 30 * 60 * 1000;
+}
+let idleTimer = null;
+export function startIdleLogout(loginPage = './') {
+	const reset = () => {
+		clearTimeout(idleTimer);
+		idleTimer = setTimeout(async () => {
+			try {
+				sessionStorage.setItem('idle_logout', '1');
+				const sb = await getSupabase();
+				await sb.auth.signOut();
+			} catch (e) {}
+			location.replace(loginPage + '?timeout=1');
+		}, idleMs());
+	};
+	['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, reset, { passive: true }));
+	reset();
 }
 
 export async function getAccessToken() {

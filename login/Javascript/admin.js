@@ -303,25 +303,73 @@ async function loadPosts() {
 		} catch (e2) { allPosts = []; }
 		setStatus('⚠️ JSON 讀取失敗，顯示本機快取', 'orange');
 	}
+	updateTitleFilter();
 	renderPosts();
+}
+
+function updateTitleFilter() {
+	const sel = $('postTitleFilter');
+	if (!sel) return;
+	const cur = sel.value;
+	const titles = [...new Set(allPosts.map(p => String(p['標題'] || '')).filter(t => t))].sort();
+	sel.innerHTML = '<option value="">📌 所有標題</option>' + titles.map(t => `<option value="${esc(t).replace(/"/g, '&quot;')}"${t === cur ? ' selected' : ''}>${esc(t)}</option>`).join('');
+}
+
+function getCombinedId(post) {
+	const pid = post["PostID"] || "0";
+	const d = (typeof post["發佈日期"] === 'number')
+		? new Date((post["發佈日期"] - 25569) * 86400 * 1000)
+		: new Date(post["發佈日期"]);
+	if (isNaN(d.getTime())) return `${pid}_00000000000000`;
+	const pad = (n) => String(n).padStart(2, '0');
+	return `${pid}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function postDateVal(p) {
+	return (typeof p["發佈日期"] === 'number') ? (p["發佈日期"] - 25569) * 86400 * 1000 : new Date(p["發佈日期"]).getTime();
 }
 
 function renderPosts() {
 	const term = ($('postSearch').value || '').toLowerCase();
-	const list = allPosts.filter(p => !term || String(p['標題'] || '').toLowerCase().includes(term) || String(p['貼文內容'] || '').toLowerCase().includes(term));
+	const picked = $('postTitleFilter') ? $('postTitleFilter').value : '';
+	const mode = $('postSort') ? $('postSort').value : 'id_desc';
+	const list = allPosts.filter(p => {
+		const titleOk = !picked || String(p['標題'] || '') === picked;
+		const termOk = !term || String(p['標題'] || '').toLowerCase().includes(term) || String(p['貼文內容'] || '').toLowerCase().includes(term);
+		return titleOk && termOk;
+	});
+	// 置頂永遠在前，再按選擇排序（預設 ID 新→舊）
+	list.sort((a, b) => {
+		const pin = ((b['置頂'] === true) - (a['置頂'] === true));
+		if (pin !== 0) return pin;
+		if (mode === 'id_asc') return (Number(a['PostID']) || 0) - (Number(b['PostID']) || 0);
+		if (mode === 'date_desc') return postDateVal(b) - postDateVal(a);
+		if (mode === 'date_asc') return postDateVal(a) - postDateVal(b);
+		return (Number(b['PostID']) || 0) - (Number(a['PostID']) || 0);
+	});
 	const PAGE = 10;
 	const maxPage = Math.max(1, Math.ceil(list.length / PAGE));
 	if (postPage > maxPage) postPage = maxPage;
 	if (postPage < 1) postPage = 1;
 	const page = list.slice((postPage - 1) * PAGE, postPage * PAGE);
 	$('postCount').innerText = `共 ${list.length} 筆`;
-	$('postPageInfo').innerText = `${postPage}/${maxPage}`;
+	$('postPageInfo').innerText = `/${maxPage}`;
+	const jump = $('postJump');
+	if (jump) {
+		let opts = '';
+		for (let i = 1; i <= maxPage; i++) opts += `<option value="${i}"${i === postPage ? ' selected' : ''}>${i}</option>`;
+		jump.innerHTML = opts;
+	}
 	$('postRows').innerHTML = page.map((p) => {
 		const pid = p['PostID'] ?? '';
 		const idx = allPosts.indexOf(p);
-		return `<tr><td>${esc(pid)}</td><td style="white-space:nowrap;">${esc(p['發佈日期'] || '')}</td>
+		const pinned = p['置頂'] === true;
+		const artUrl = `../ghoststory/article/?id=${encodeURIComponent(getCombinedId(p))}`;
+		return `<tr><td>${pinned ? '📌' : ''}${esc(pid)}</td><td style="white-space:nowrap;">${esc(p['發佈日期'] || '')}</td>
 			<td class="title">${esc(p['標題'] || '(無標題)')}</td>
 			<td style="white-space:nowrap;">
+				<button class="rowbtn" data-act="pin" data-i="${idx}">${pinned ? '取消置頂' : '置頂'}</button>
+				<a class="rowbtn" style="text-decoration:none;" href="${artUrl}" target="_blank">👁查看</a>
 				<button class="rowbtn" data-act="preview" data-i="${idx}">預覽</button>
 				<button class="rowbtn" data-act="edit" data-i="${idx}">編輯</button>
 				<button class="rowbtn" data-act="del" data-i="${idx}">刪除</button>
@@ -335,7 +383,7 @@ function sortPinned(arr) {
 }
 
 async function loadNotices() {
-	$('noticeRows').innerHTML = '<tr><td colspan="4">載入中...</td></tr>';
+	$('noticeRows').innerHTML = '<tr><td colspan="5">載入中...</td></tr>';
 	try {
 		const d = await fetchJson('/' + jsonPostsPath);
 		allNotices = d.filter(i => String(i['標題'] || '').includes('公告'));
@@ -348,24 +396,52 @@ async function loadNotices() {
 }
 
 function renderNoticesAdmin() {
-	const maxPage = Math.max(1, Math.ceil(allNotices.length / ADMIN_PAGE));
+	const term = ($('noticeSearch') && $('noticeSearch').value || '').toLowerCase();
+	const list = allNotices.filter(i => {
+		if (!term) return true;
+		const t = String(i['標題'] || '').toLowerCase();
+		const c = String(i['貼文內容'] || i['內容'] || '').toLowerCase();
+		return t.includes(term) || c.includes(term);
+	});
+	const maxPage = Math.max(1, Math.ceil(list.length / ADMIN_PAGE));
 	if (noticePage > maxPage) noticePage = maxPage;
 	if (noticePage < 1) noticePage = 1;
-	const page = allNotices.slice((noticePage - 1) * ADMIN_PAGE, noticePage * ADMIN_PAGE);
-	$('noticeCount').innerText = `共 ${allNotices.length} 筆`;
+	const page = list.slice((noticePage - 1) * ADMIN_PAGE, noticePage * ADMIN_PAGE);
+	$('noticeCount').innerText = `共 ${list.length} 筆`;
 	$('noticePageInfo').innerText = `${noticePage}/${maxPage}`;
+	const jump = $('noticeJump');
+	if (jump) {
+		let opts = '';
+		for (let i = 1; i <= maxPage; i++) opts += `<option value="${i}"${i === noticePage ? ' selected' : ''}>${i}</option>`;
+		jump.innerHTML = opts;
+	}
 	$('noticeRows').innerHTML = page.map((it) => {
 		const idx = allNotices.indexOf(it);
 		const pinned = it['置頂'] === true;
+		const body = String(it['貼文內容'] || it['內容'] || '');
+		const short = body.length > 80 ? body.substring(0, 80) + '...' : body;
 		return `<tr><td style="white-space:nowrap;">
 				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '取消置頂' : '📌置頂'}</button>
 			</td><td>${esc(it['PostID'] ?? '')}</td>
 			<td class="title">${esc(it['標題'] || '')}</td>
+			<td class="title" style="max-width:280px;white-space:pre-wrap;">${esc(short)}</td>
 			<td style="white-space:nowrap;">
+				<button class="rowbtn" data-nact="preview" data-i="${idx}">預覽</button>
 				<button class="rowbtn" data-nact="edit" data-i="${idx}">編輯</button>
 				<button class="rowbtn" data-nact="del" data-i="${idx}">刪除</button>
 			</td></tr>`;
-	}).join('') || '<tr><td colspan="4">無資料</td></tr>';
+	}).join('') || '<tr><td colspan="5">無資料</td></tr>';
+}
+
+async function togglePostPin(idx) {
+	const it = allPosts[idx];
+	if (!it) return;
+	const to = !(it['置頂'] === true);
+	it['置頂'] = to;
+	renderPosts();
+	stage('posts', { type: 'pin', match: { PostID: it['PostID'] }, to });
+	logOp(to ? '置頂文章' : '取消置頂', `${it['PostID']}`);
+	setStatus('已暫存，按上方儲存才寫入', 'orange');
 }
 
 async function togglePin(idx, btn) {
@@ -391,6 +467,7 @@ function openNoticeEditor(idx) {
 	}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
+	setModalMode(false);
 }
 
 function openNoticeCreator() {
@@ -406,6 +483,7 @@ function openNoticeCreator() {
 	}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
+	setModalMode(false);
 }
 
 function openSvcCreator() {
@@ -420,6 +498,7 @@ function openSvcCreator() {
 		}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
+	setModalMode(false);
 }
 
 // ---------- 服務內容 ----------
@@ -443,12 +522,25 @@ async function loadSvc() {
 }
 
 function renderSvcRows() {
-	const maxPage = Math.max(1, Math.ceil(allSvc.length / ADMIN_PAGE));
+	const term = ($('svcSearch') && $('svcSearch').value || '').toLowerCase();
+	const list = allSvc.filter(i => {
+		if (!term) return true;
+		const t = String(i['標題'] || '').toLowerCase();
+		const c = String(i['貼文內容'] || i['內容'] || '').toLowerCase();
+		return t.includes(term) || c.includes(term);
+	});
+	const maxPage = Math.max(1, Math.ceil(list.length / ADMIN_PAGE));
 	if (svcPage > maxPage) svcPage = maxPage;
 	if (svcPage < 1) svcPage = 1;
-	const page = allSvc.slice((svcPage - 1) * ADMIN_PAGE, svcPage * ADMIN_PAGE);
-	$('svcCount').innerText = `共 ${allSvc.length} 筆`;
+	const page = list.slice((svcPage - 1) * ADMIN_PAGE, svcPage * ADMIN_PAGE);
+	$('svcCount').innerText = `共 ${list.length} 筆`;
 	$('svcPageInfo').innerText = `${svcPage}/${maxPage}`;
+	const jump = $('svcJump');
+	if (jump) {
+		let opts = '';
+		for (let i = 1; i <= maxPage; i++) opts += `<option value="${i}"${i === svcPage ? ' selected' : ''}>${i}</option>`;
+		jump.innerHTML = opts;
+	}
 	$('svcRows').innerHTML = page.map((it) => {
 		const idx = allSvc.indexOf(it);
 		return '<tr><td>' + esc(it['PostID'] ?? idx + 1) + '</td>'
@@ -483,6 +575,22 @@ function openEditor(kind, idx) {
 	}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
+	setModalMode(false);
+}
+
+function setModalMode(preview) {
+	$('modalFields').style.display = preview ? 'none' : '';
+	$('modalSave').style.display = preview ? 'none' : '';
+	$('modalPreview').style.display = preview ? 'none' : '';
+}
+
+function previewOnly(kind, idx) {
+	if (kind === 'post') openEditor('post', idx);
+	else if (kind === 'notice') openNoticeEditor(idx);
+	else openEditor('svc', idx);
+	$('modalTitle').innerText = '預覽（唯讀）';
+	setModalMode(true);
+	showPreview();
 }
 
 function collectFields() {
@@ -715,7 +823,11 @@ export async function initAdmin(sess) {
 	});
 
 	$('postSearch').oninput = () => { postPage = 1; renderPosts(); };
+	$('postTitleFilter').onchange = () => { postPage = 1; renderPosts(); };
+	$('postSort').onchange = () => { postPage = 1; renderPosts(); };
+	$('postJump').onchange = () => { postPage = parseInt($('postJump').value) || 1; renderPosts(); };
 	$('postReload').onclick = loadPosts;
+	$('postAdd').onclick = () => { location.href = 'inputData.html'; };
 	$('postPrev').onclick = () => { postPage--; renderPosts(); };
 	$('postNext').onclick = () => { postPage++; renderPosts(); };
 	$('postBackup').onclick = () => {
@@ -729,12 +841,15 @@ export async function initAdmin(sess) {
 	$('postRows').onclick = (e) => {
 		const b = e.target.closest('button'); if (!b) return;
 		const i = Number(b.dataset.i);
-		if (b.dataset.act === 'edit') openEditor('post', i);
-		else if (b.dataset.act === 'preview') { openEditor('post', i); showPreview(); }
+		if (b.dataset.act === 'pin') togglePostPin(i);
+		else if (b.dataset.act === 'edit') openEditor('post', i);
+		else if (b.dataset.act === 'preview') previewOnly('post', i);
 		else if (b.dataset.act === 'del') delItem('post', i, b);
 	};
 	$('svcCat').onchange = () => { svcPage = 1; loadSvc(); };
 	$('svcReload').onclick = loadSvc;
+	$('svcSearch').oninput = () => { svcPage = 1; renderSvcRows(); };
+	$('svcJump').onchange = () => { svcPage = parseInt($('svcJump').value) || 1; renderSvcRows(); };
 	$('svcAdd').onclick = openSvcCreator;
 	$('svcPrev').onclick = () => { svcPage--; renderSvcRows(); };
 	$('svcNext').onclick = () => { svcPage++; renderSvcRows(); };
@@ -742,11 +857,13 @@ export async function initAdmin(sess) {
 	$('noticeAdd').onclick = openNoticeCreator;
 	$('noticePrev').onclick = () => { noticePage--; renderNoticesAdmin(); };
 	$('noticeNext').onclick = () => { noticePage++; renderNoticesAdmin(); };
-	$('noticeReload').onclick = loadNotices;
+	$('noticeSearch').oninput = () => { noticePage = 1; renderNoticesAdmin(); };
+	$('noticeJump').onchange = () => { noticePage = parseInt($('noticeJump').value) || 1; renderNoticesAdmin(); };
 	$('noticeRows').onclick = (e) => {
 		const b = e.target.closest('button'); if (!b) return;
 		const i = Number(b.dataset.i);
 		if (b.dataset.nact === 'pin') togglePin(i);
+		else if (b.dataset.nact === 'preview') previewOnly('notice', i);
 		else if (b.dataset.nact === 'edit') openNoticeEditor(i);
 		else if (b.dataset.nact === 'del') delNotice(i, b);
 	};
@@ -756,7 +873,7 @@ export async function initAdmin(sess) {
 		if (b.dataset.sact === 'up') moveSvc(i, -1);
 		else if (b.dataset.sact === 'down') moveSvc(i, 1);
 		else if (b.dataset.sact === 'edit') openEditor('svc', i);
-		else if (b.dataset.sact === 'preview') { openEditor('svc', i); showPreview(); }
+		else if (b.dataset.sact === 'preview') previewOnly('svc', i);
 		else if (b.dataset.sact === 'del') delItem('svc', i, b);
 	};
 	$('modalPreview').onclick = showPreview;

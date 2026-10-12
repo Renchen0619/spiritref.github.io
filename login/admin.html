@@ -62,8 +62,7 @@
 
 	<div class="topbar">
 		<h2>🛠️ 管理後台</h2>
-		<input type="password" id="adminPwd" placeholder="管理密碼（送 GAS 換 token）">
-		<a href="inputData.html" style="font-size:13px;">＋發文</a>
+		<input type="password" id="adminPwd" placeholder="管理密碼">
 		<button id="logoutBtn">登出</button>
 		<div id="adminUser">驗證登入中...</div>
 	</div>
@@ -79,9 +78,20 @@
 	<section id="tab-posts" class="panel active">
 		<div class="toolbar">
 			<input id="postSearch" placeholder="🔍 搜尋標題/內容..." style="flex:1;min-width:160px;">
+			<select id="postTitleFilter" style="max-width:200px;">
+				<option value="">📌 所有標題</option>
+			</select>
+			<select id="postSort">
+				<option value="id_desc">ID 新→舊</option>
+				<option value="id_asc">ID 舊→新</option>
+				<option value="date_desc">日期新→舊</option>
+				<option value="date_asc">日期舊→新</option>
+			</select>
 			<button id="postReload" class="ghost">重新載入</button>
+			<button id="postAdd">＋ 新增文章</button>
 			<button id="postBackup" class="ghost">⬇ 備份 JSON</button>
 			<button id="postPrev" class="ghost">◀</button>
+			<select id="postJump" class="jump-select"></select>
 			<span id="postPageInfo"></span>
 			<button id="postNext" class="ghost">▶</button>
 			<span id="postCount"></span>
@@ -96,15 +106,17 @@
 		<div class="toolbar">
 			<button id="noticeReload" class="ghost">重新載入</button>
 			<button id="noticeAdd">＋ 新增公告</button>
+			<input id="noticeSearch" placeholder="🔍 搜尋標題..." style="flex:1;min-width:140px;">
 			<button id="noticePrev" class="ghost">◀</button>
+			<select id="noticeJump" class="jump-select"></select>
 			<span id="noticePageInfo"></span>
 			<button id="noticeNext" class="ghost">▶</button>
 			<span style="font-size:13px;">📌 置頂的公告會排在最前面（三處前台同步）。</span>
 			<span id="noticeCount"></span>
 		</div>
 		<div style="overflow-x:auto;">
-		<table class="data"><thead><tr><th>置頂</th><th>ID</th><th>標題</th><th>操作</th></tr></thead>
-		<tbody id="noticeRows"><tr><td colspan="4">載入中...</td></tr></tbody></table>
+		<table class="data"><thead><tr><th>置頂</th><th>ID</th><th>標題</th><th>內容</th><th>操作</th></tr></thead>
+		<tbody id="noticeRows"><tr><td colspan="5">載入中...</td></tr></tbody></table>
 		</div>
 	</section>
 
@@ -117,7 +129,9 @@
 			</select>
 			<button id="svcReload" class="ghost">重新載入</button>
 			<button id="svcAdd">＋ 新增</button>
+			<input id="svcSearch" placeholder="🔍 搜尋標題..." style="flex:1;min-width:140px;">
 			<button id="svcPrev" class="ghost">◀</button>
+			<select id="svcJump" class="jump-select"></select>
 			<span id="svcPageInfo"></span>
 			<button id="svcNext" class="ghost">▶</button>
 			<span id="svcCount"></span>

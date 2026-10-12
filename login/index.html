@@ -43,8 +43,13 @@
 	const btn = document.getElementById('loginBtn');
 
 	// 登入後回到原頁（只允許站內後台頁，避免 open redirect）
-	const nextParam = new URLSearchParams(location.search).get('next');
-	const nextPage = ['inputData.html', 'admin.html'].includes(nextParam) ? nextParam : 'inputData.html';
+	const qs = new URLSearchParams(location.search);
+	const nextParam = qs.get('next');
+	const nextPage = ['inputData.html', 'admin.html'].includes(nextParam) ? nextParam : 'admin.html';
+	if (qs.get('timeout') === '1' || sessionStorage.getItem('idle_logout') === '1') {
+		sessionStorage.removeItem('idle_logout');
+		status.innerText = '已因閒置 30 分鐘自動登出，請重新登入。';
+	}
 
 	// 已登入直接進後台
 	if (await getSession()) location.replace(nextPage);
