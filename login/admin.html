@@ -22,6 +22,7 @@
 		.panel { background: #fff; border: 1px solid #eaeaea; border-radius: 12px; padding: 20px; display: none; }
 		.panel.active { display: block; }
 		.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+		.toolbar .pager { display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
 		.toolbar input, .toolbar select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
 		.toolbar button { padding: 8px 14px; background: #8b7355; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: bold; }
 		.toolbar button:hover { background: #6d5a3e; }
@@ -90,10 +91,12 @@
 			<button id="postReload" class="ghost">重新載入</button>
 			<button id="postAdd">＋ 新增文章</button>
 			<button id="postBackup" class="ghost">⬇ 備份 JSON</button>
+			<span class="pager">
 			<button id="postPrev" class="ghost">◀</button>
 			<select id="postJump" class="jump-select"></select>
 			<span id="postPageInfo"></span>
 			<button id="postNext" class="ghost">▶</button>
+			</span>
 			<span id="postCount"></span>
 		</div>
 		<div style="overflow-x:auto;">
@@ -107,10 +110,12 @@
 			<button id="noticeReload" class="ghost">重新載入</button>
 			<button id="noticeAdd">＋ 新增公告</button>
 			<input id="noticeSearch" placeholder="🔍 搜尋標題..." style="flex:1;min-width:140px;">
+			<span class="pager">
 			<button id="noticePrev" class="ghost">◀</button>
 			<select id="noticeJump" class="jump-select"></select>
 			<span id="noticePageInfo"></span>
 			<button id="noticeNext" class="ghost">▶</button>
+			</span>
 			<span style="font-size:13px;">📌 置頂的公告會排在最前面（三處前台同步）。</span>
 			<span id="noticeCount"></span>
 		</div>
@@ -130,10 +135,12 @@
 			<button id="svcReload" class="ghost">重新載入</button>
 			<button id="svcAdd">＋ 新增</button>
 			<input id="svcSearch" placeholder="🔍 搜尋標題..." style="flex:1;min-width:140px;">
+			<span class="pager">
 			<button id="svcPrev" class="ghost">◀</button>
 			<select id="svcJump" class="jump-select"></select>
 			<span id="svcPageInfo"></span>
 			<button id="svcNext" class="ghost">▶</button>
+			</span>
 			<span id="svcCount"></span>
 		</div>
 		<div style="overflow-x:auto;">
