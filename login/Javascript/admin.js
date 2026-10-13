@@ -484,7 +484,7 @@ function renderNoticesAdmin() {
 	if (noticePage < 1) noticePage = 1;
 	const page = list.slice((noticePage - 1) * ADMIN_PAGE, noticePage * ADMIN_PAGE);
 	$('noticeCount').innerText = `共 ${list.length} 筆`;
-	$('noticePageInfo').innerText = `${noticePage}/${maxPage}`;
+	$('noticePageInfo').innerText = `/${maxPage}`;
 	const jump = $('noticeJump');
 	if (jump) {
 		let opts = '';
@@ -495,12 +495,13 @@ function renderNoticesAdmin() {
 		const idx = allNotices.indexOf(it);
 		const pinned = it['置頂'] === true;
 		const body = String(it['貼文內容'] || it['內容'] || '');
-		const short = body.length > 80 ? body.substring(0, 80) + '...' : body;
+		const isLong = body.length > 60;
+		const short = isLong ? body.substring(0, 60) + '...' : body;
 		return `<tr><td style="white-space:nowrap;">
 				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '取消置頂' : '📌置頂'}</button>
 			</td><td>${esc(it['PostID'] ?? '')}</td>
 			<td class="title">${esc(it['標題'] || '')}</td>
-			<td class="title" style="max-width:280px;white-space:pre-wrap;">${esc(short)}</td>
+			<td class="title cell-text" style="max-width:280px;white-space:pre-wrap;" data-i="${idx}">${esc(short)}</td>
 			<td style="white-space:nowrap;">
 				<button class="rowbtn" data-nact="preview" data-i="${idx}">預覽</button>
 				<button class="rowbtn" data-nact="edit" data-i="${idx}">編輯</button>
@@ -567,11 +568,15 @@ function openSvcCreator() {
 	const cat = $('svcCat').value;
 	$('modalTitle').innerText = `新增${cat}`;
 	$('modalFields').innerHTML = `<label>分類（固定為目前頁籤）</label><input value="${esc(cat)}" disabled>`
-		+ fieldDefs('svc').map(([k, t]) => {
-			return `<label>${k}</label>` + (t === 'textarea'
-				? `<textarea data-k="${k}"></textarea>`
-				: `<input data-k="${k}" value="">`);
-		}).join('');
+		+ fieldDefs('svc')
+			.filter(([k]) => !(cat === '服務項目' && k === '連結'))
+			.map(([k, t]) => {
+				const input = t === 'textarea'
+					? `<textarea data-k="${k}"></textarea>`
+					: `<input data-k="${k}" value="">`;
+				const hint = (k === '連結') ? `<div style="font-size:12px;color:#8b7355;margin:2px 0 6px;">多個連結請換行或逗號分隔，一行一個也可以</div>` : '';
+				return `<label>${k}</label>` + input + hint;
+			}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
 	setModalMode(false);
@@ -610,7 +615,7 @@ function renderSvcRows() {
 	if (svcPage < 1) svcPage = 1;
 	const page = list.slice((svcPage - 1) * ADMIN_PAGE, svcPage * ADMIN_PAGE);
 	$('svcCount').innerText = `共 ${list.length} 筆`;
-	$('svcPageInfo').innerText = `${svcPage}/${maxPage}`;
+	$('svcPageInfo').innerText = `/${maxPage}`;
 	const jump = $('svcJump');
 	if (jump) {
 		let opts = '';
@@ -642,13 +647,18 @@ function fieldDefs(kind) {
 function openEditor(kind, idx) {
 	const src = kind === 'post' ? allPosts[idx] : allSvc[idx];
 	editing = { kind, idx };
+	const hideLink = kind === 'svc' && src['分類'] === '服務項目';
 	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${src['PostID'] ?? src['標題']}）`;
-	$('modalFields').innerHTML = fieldDefs(kind).map(([k, t]) => {
-		const v = src[k] ?? src['內容'] ?? '';
-		return `<label>${k}</label>` + (t === 'textarea'
-			? `<textarea data-k="${k}">${esc(v)}</textarea>`
-			: `<input data-k="${k}" value="${esc(String(v)).replace(/"/g, '&quot;')}">`);
-	}).join('');
+	$('modalFields').innerHTML = fieldDefs(kind)
+		.filter(([k]) => !(hideLink && k === '連結'))
+		.map(([k, t]) => {
+			const v = src[k] ?? src['內容'] ?? '';
+			const input = t === 'textarea'
+				? `<textarea data-k="${k}">${esc(v)}</textarea>`
+				: `<input data-k="${k}" value="${esc(String(v)).replace(/"/g, '&quot;')}">`;
+			const hint = (k === '連結') ? `<div style="font-size:12px;color:#8b7355;margin:2px 0 6px;">多個連結請換行或逗號分隔，一行一個也可以</div>` : '';
+			return `<label>${k}</label>` + input + hint;
+		}).join('');
 	$('previewBox').style.display = 'none';
 	$('modal').classList.add('open');
 	setModalMode(false);
@@ -891,11 +901,16 @@ export async function initAdmin(sess) {
 	} catch (e) { setStatus('⚠️ INI 載入失敗：' + e.message, 'orange'); }
 	renderOplog();
 
+	let imgLoaded = false;
 	document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
 		document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
 		b.classList.add('active');
 		document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
 		$('tab-' + b.dataset.tab).classList.add('active');
+		if (b.dataset.tab === 'images' && !imgLoaded) {
+			imgLoaded = true;
+			loadImages();
+		}
 	});
 
 	$('postSearch').oninput = () => { postPage = 1; renderPosts(); };
@@ -936,6 +951,24 @@ export async function initAdmin(sess) {
 	$('noticeSearch').oninput = () => { noticePage = 1; renderNoticesAdmin(); };
 	$('noticeJump').onchange = () => { noticePage = parseInt($('noticeJump').value) || 1; renderNoticesAdmin(); };
 	$('noticeRows').onclick = (e) => {
+		const cell = e.target.closest('.cell-text');
+		if (cell && cell.dataset.expanded !== '1') {
+			const it = allNotices[Number(cell.dataset.i)];
+			if (it) {
+				const body = String(it['貼文內容'] || it['內容'] || '');
+				if (body.length > 60) {
+					cell.innerText = body + ' （收起）';
+					cell.dataset.expanded = '1';
+					return;
+				}
+			}
+		} else if (cell) {
+			cell.dataset.expanded = '';
+			const it = allNotices[Number(cell.dataset.i)];
+			const body = String(it['貼文內容'] || it['內容'] || '');
+			cell.innerText = body.substring(0, 60) + '...';
+			return;
+		}
 		const b = e.target.closest('button'); if (!b) return;
 		const i = Number(b.dataset.i);
 		if (b.dataset.nact === 'pin') togglePin(i);
