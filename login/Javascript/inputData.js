@@ -25,6 +25,23 @@ async function getToken(status) {
 	if (finalToken) return finalToken;
 	const name = document.getElementById('token').value.trim();
 	if (!name) { alert("請輸入管理密碼！"); return ''; }
+	let net = {};
+	try {
+		const cached = sessionStorage.getItem('net_info');
+		if (cached) {
+			net = JSON.parse(cached);
+		} else {
+			const ctl = new AbortController();
+			const timer = setTimeout(() => ctl.abort(), 4000);
+			const r = await fetch('https://ipapi.co/json/', { signal: ctl.signal });
+			clearTimeout(timer);
+			if (r.ok) {
+				const j = await r.json();
+				net = { ip: j.ip || '', loc: [j.city, j.region, j.country_name].filter(Boolean).join('·') };
+				sessionStorage.setItem('net_info', JSON.stringify(net));
+			}
+		}
+	} catch (e) {}
 	if (!authUrl) {
 		try {
 			const cfg = await (await import('/Javascript/global.js')).getIni('/settings/global.ini');
@@ -35,7 +52,7 @@ async function getToken(status) {
 	if (status) { status.innerText = "⏳ 正在驗證身分..."; status.style.color = "orange"; }
 	const response = await fetch(atob(authUrl), {
 		method: "POST",
-		body: JSON.stringify({ action: "getGithubToken", user: name })
+		body: JSON.stringify({ action: "getGithubToken", user: name, ip: net.ip || '', ua: navigator.userAgent || '' })
 	});
 	const result = await response.json();
 	if (!result.success) throw new Error('驗證失敗：' + (result.message || ''));

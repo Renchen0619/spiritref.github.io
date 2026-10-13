@@ -60,7 +60,9 @@ async function getToken() {
 	const user = name || sessionStorage.getItem('admin_pwd') || '';
 	if (!user) throw new Error('請先輸入管理密碼');
 	if (!authUrl) throw new Error('INI 缺少 updateGithub_URL');
-	const res = await fetch(atob(authUrl), { method: 'POST', body: JSON.stringify({ action: 'getGithubToken', user }) });
+	let net = {};
+	try { net = await netInfo(); } catch (e) {}
+	const res = await fetch(atob(authUrl), { method: 'POST', body: JSON.stringify({ action: 'getGithubToken', user, ip: net.ip || '', ua: navigator.userAgent || '' }) });
 	const j = await res.json();
 	if (!j.success) throw new Error('身分驗證失敗：' + (j.message || ''));
 	finalToken = j.githubToken;
