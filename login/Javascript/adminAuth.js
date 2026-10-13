@@ -69,8 +69,12 @@ export async function getAccessToken() {
 }
 
 export async function logoutAndGo(loginPage = './') {
-	const sb = await getSupabase();
-	await sb.auth.signOut();
+	try {
+		sessionStorage.removeItem('admin_pwd');
+		sessionStorage.removeItem('net_info');
+		const sb = await getSupabase();
+		await sb.auth.signOut();
+	} catch (e) {}
 	location.replace(loginPage);
 }
 
