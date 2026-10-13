@@ -259,35 +259,111 @@ async function discardAll() {
 const OPLOG_PATH = 'Data/admin-oplog.json';
 const OPLOG_KEEP_MS = 90 * 24 * 3600 * 1000; // 只保留3個月
 
+function deviceLabel() {
+	try {
+		const ua = navigator.userAgent;
+		let os = '其他裝置';
+		if (/Android/i.test(ua)) os = 'Android';
+		else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+		else if (/Windows/i.test(ua)) os = 'Windows';
+		else if (/Macintosh/i.test(ua)) os = 'Mac';
+		else if (/Linux/i.test(ua)) os = 'Linux';
+		let br = '';
+		if (/Edg\//i.test(ua)) br = 'Edge';
+		else if (/Chrome\//i.test(ua)) br = 'Chrome';
+		else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) br = 'Safari';
+		else if (/Firefox\//i.test(ua)) br = 'Firefox';
+		else if (/LINE\//i.test(ua)) br = 'LINE內建';
+		return `${os}${br ? '·' + br : ''} ${window.innerWidth}x${window.innerHeight}`;
+	} catch (e) { return '未知裝置'; }
+}
+
+// IP＋地區（快取一整個分頁工作階段，失敗就只記裝置）
+async function netInfo() {
+	try {
+		const cached = sessionStorage.getItem('net_info');
+		if (cached) return JSON.parse(cached);
+		const ctl = new AbortController();
+		const timer = setTimeout(() => ctl.abort(), 4000);
+		const r = await fetch('https://ipapi.co/json/', { signal: ctl.signal });
+		clearTimeout(timer);
+		if (!r.ok) throw new Error('net ' + r.status);
+		const j = await r.json();
+		const info = {
+			ip: j.ip || 'unknown',
+			loc: [j.city, j.region, j.country_name].filter(Boolean).join('·') || 'unknown'
+		};
+		sessionStorage.setItem('net_info', JSON.stringify(info));
+		return info;
+	} catch (e) {
+		return { ip: 'unknown', loc: 'unknown' };
+	}
+}
+
 function logOp(event, detail) {
-	const entry = { t: new Date().toISOString(), admin: session?.user?.email || '?', event, detail: detail || '' };
+	const entry = { t: new Date().toISOString(), admin: session?.user?.email || '?', event, detail: detail || '', dev: deviceLabel(), ip: '', loc: '' };
 	try {
 		const arr = JSON.parse(localStorage.getItem('admin_oplog') || '[]');
 		arr.unshift(entry);
 		localStorage.setItem('admin_oplog', JSON.stringify(arr.slice(0, 200)));
 	} catch (e) {}
 	renderOplog();
-	// 遠端共用檔等按儲存一次結算（避免每次操作都觸發部署）
-	pendingLogs.push(entry);
-	markDirty();
+	// IP 拿到後補上（本機＋遠端都更新）
+	netInfo().then(info => {
+		entry.ip = info.ip;
+		entry.loc = info.loc;
+		try {
+			const arr = JSON.parse(localStorage.getItem('admin_oplog') || '[]');
+			if (arr[0] && arr[0].t === entry.t) {
+				arr[0] = entry;
+				localStorage.setItem('admin_oplog', JSON.stringify(arr.slice(0, 200)));
+			}
+		} catch (e) {}
+		renderOplog();
+		pendingLogs.push(entry);
+		markDirty();
+	}).catch(() => {
+		pendingLogs.push(entry);
+		markDirty();
+	});
+}
+
+function oplogText(e) {
+	if (typeof e === 'string') return e;
+	const extra = [e.dev, e.loc, e.ip].filter(Boolean).join(' · ');
+	return `${new Date(e.t).toLocaleString()} [${e.admin || '?'}] ${e.event || ''} ${e.detail || ''}${extra ? ' (' + extra + ')' : ''}`;
+}
+
+function refreshDevFilter(list) {
+	const sel = $('oplogDev');
+	if (!sel) return;
+	const cur = sel.value;
+	const devs = [...new Set(list.map(e => (e && e.dev) || '未知裝置'))];
+	sel.innerHTML = '<option value="">全部裝置</option>' + devs.map(d => `<option value="${esc(d).replace(/"/g, '&quot;')}"${d === cur ? ' selected' : ''}>${esc(d)}</option>`).join('');
 }
 
 function renderOplog() {
-	const fmt = (e) => typeof e === 'string' ? e : `${new Date(e.t).toLocaleString()} [${e.admin || '?'}] ${e.event || ''} ${e.detail || ''}`;
+	const devFilter = ($('oplogDev') && $('oplogDev').value) || '';
+	const show = (arr) => {
+		const list = arr.filter(e => {
+			if (e && typeof e === 'object' && e.t && (Date.now() - new Date(e.t).getTime()) >= OPLOG_KEEP_MS) return false;
+			if (devFilter && e && typeof e === 'object' && ((e.dev || '未知裝置') !== devFilter)) return false;
+			return true;
+		});
+		refreshDevFilter(arr.filter(e => e && typeof e === 'object'));
+		$('oplog').innerText = list.length ? list.map(oplogText).join('\n') : '（空）';
+	};
 	try {
 		const arr = JSON.parse(localStorage.getItem('admin_oplog') || '[]');
-		$('oplog').innerText = arr.length ? arr.map(fmt).join('\n') : '（空）';
+		show(Array.isArray(arr) ? arr : []);
 	} catch (e) {}
-	// 有共用檔就以它為準（多管理員、多裝置同步＋3個月過期）
+	// 有共用檔就以它為準（多管理員、多裝置同步）
 	fetch(`https://api.github.com/repos/${GITHUB_USER}/${JSON_REPO}/contents/${OPLOG_PATH}`)
 		.then(r => r.ok ? r.json() : null)
 		.then(j => {
 			if (!j) return;
 			const arr = JSON.parse(fromB64(j.content));
-			if (!Array.isArray(arr)) return;
-			const cutoff = Date.now() - OPLOG_KEEP_MS;
-			const list = arr.filter(e => e && (Date.now() - new Date(e.t).getTime()) < cutoff);
-			if (list.length) $('oplog').innerText = list.map(fmt).join('\n');
+			if (Array.isArray(arr)) show(arr);
 		}).catch(() => {});
 }
 
@@ -910,6 +986,7 @@ export async function initAdmin(sess) {
 	};
 
 	$('healthBtn').onclick = healthCheck;
+	$('oplogDev').onchange = renderOplog;
 	$('syncPostsBtn').onclick = rebuildVersion;
 	$('saveAllBtn').onclick = saveAll;
 	$('discardBtn').onclick = discardAll;
