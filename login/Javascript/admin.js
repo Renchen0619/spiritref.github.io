@@ -18,6 +18,7 @@ let allNotices = [];
 let editing = null; // {kind:'post'|'svc'|'notice'}
 let postPage = 1;
 let svcPage = 1;
+let svcCat = '服務項目';
 let noticePage = 1;
 const ADMIN_PAGE = 10;
 // 暫存制：異動先記帳，按儲存才一次寫入
@@ -206,7 +207,7 @@ async function saveAll() {
 				} catch (e) {}
 			} else {
 				try {
-					const cat = $('svcCat').value;
+					const cat = svcCat;
 					allSvc = next.filter(i => String(i['分類'] || '') === cat);
 					renderSvcRows();
 				} catch (e) {}
@@ -567,7 +568,7 @@ function openNoticeCreator() {
 
 function openSvcCreator() {
 	editing = { kind: 'svc', idx: -1 };
-	const cat = $('svcCat').value;
+	const cat = svcCat;
 	$('modalTitle').innerText = `新增${cat}`;
 	$('modalFields').innerHTML = `<label>分類（固定為目前頁籤）</label><input value="${esc(cat)}" disabled>`
 		+ fieldDefs('svc')
@@ -587,7 +588,7 @@ function openSvcCreator() {
 // ---------- 服務內容 ----------
 async function loadSvc() {
 	$('svcRows').innerHTML = '<tr><td colspan="3">載入中...</td></tr>';
-	const cat = $('svcCat').value;
+	const cat = svcCat;
 	try {
 		if (cat === '公告') {
 			const d = await fetchJson('/' + jsonPostsPath);
@@ -725,7 +726,7 @@ async function saveEdit() {
 			setStatus('已暫存，按上方儲存才寫入', 'orange');
 			}
 		} else {
-			const cat = $('svcCat').value;
+			const cat = svcCat;
 			if (editing.idx === -1) {
 				const entry = { "分類": cat, "標題": f['標題'] || '', "貼文內容": f['貼文內容'] || '', "連結": f['連結'] || '' };
 				stage('services', { type: 'append', entry });
@@ -794,7 +795,7 @@ async function delItem(kind, idx, btn) {
 				logOp('刪除文章', `${pid}`);
 				setStatus('已暫存，按上方儲存才寫入', 'orange');
 			} else {
-				const cat = $('svcCat').value;
+				const cat = svcCat;
 				const it = allSvc[idx];
 				const useId = it['PostID'] !== undefined;
 				allSvc.splice(idx, 1);
@@ -909,6 +910,11 @@ export async function initAdmin(sess) {
 		b.classList.add('active');
 		document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
 		$('tab-' + b.dataset.tab).classList.add('active');
+		if (b.dataset.cat) {
+			svcCat = b.dataset.cat;
+			svcPage = 1;
+			loadSvc();
+		}
 		if (b.dataset.tab === 'images' && !imgLoaded) {
 			imgLoaded = true;
 			loadImages();
@@ -939,7 +945,6 @@ export async function initAdmin(sess) {
 		else if (b.dataset.act === 'preview') previewOnly('post', i);
 		else if (b.dataset.act === 'del') delItem('post', i, b);
 	};
-	$('svcCat').onchange = () => { svcPage = 1; loadSvc(); };
 	$('svcReload').onclick = loadSvc;
 	$('svcSearch').oninput = () => { svcPage = 1; renderSvcRows(); };
 	$('svcJump').onchange = () => { svcPage = parseInt($('svcJump').value) || 1; renderSvcRows(); };
