@@ -18,7 +18,7 @@ let allNotices = [];
 let editing = null; // {kind:'post'|'svc'|'notice'}
 let postPage = 1;
 let svcPage = 1;
-let svcCat = '服務項目';
+let svcCat = '專業服務';
 let noticePage = 1;
 const ADMIN_PAGE = 10;
 // 暫存制：異動先記帳，按儲存才一次寫入
@@ -572,7 +572,7 @@ function openSvcCreator() {
 	$('modalTitle').innerText = `新增${cat}`;
 	$('modalFields').innerHTML = `<label>分類（固定為目前頁籤）</label><input value="${esc(cat)}" disabled>`
 		+ fieldDefs('svc')
-			.filter(([k]) => !(cat === '服務項目' && k === '連結'))
+			.filter(([k]) => !(cat === '專業服務' && k === '連結'))
 			.map(([k, t]) => {
 				const input = t === 'textarea'
 					? `<textarea data-k="${k}"></textarea>`
@@ -650,7 +650,7 @@ function fieldDefs(kind) {
 function openEditor(kind, idx) {
 	const src = kind === 'post' ? allPosts[idx] : allSvc[idx];
 	editing = { kind, idx };
-	const hideLink = kind === 'svc' && src['分類'] === '服務項目';
+	const hideLink = kind === 'svc' && src['分類'] === '專業服務';
 	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${src['PostID'] ?? src['標題']}）`;
 	$('modalFields').innerHTML = fieldDefs(kind)
 		.filter(([k]) => !(hideLink && k === '連結'))
