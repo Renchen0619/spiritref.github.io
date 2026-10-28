@@ -1,10 +1,10 @@
 # generate-sitemap.ps1
-# Auto-generate sitemap.xml from Data\postFB.json
-# Place this file in the Tool\ folder and run via run-sitemap.bat (double-click)
-# or: powershell -ExecutionPolicy Bypass -File .\Tool\generate-sitemap.ps1
+# Auto-generate sitemap.xml from Data\postFB.json (+ Data\Services.json for FAQ pages)
+# Usage:
+#   double-click Tool\run-sitemap.bat
+#   or: powershell -ExecutionPolicy Bypass -File .\Tool\generate-sitemap.ps1
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-# Project root is the parent of the Tool folder
 $root = Split-Path -Parent $scriptDir
 
 $jsonPath = Join-Path $root "Data\postFB.json"
@@ -64,6 +64,29 @@ foreach ($post in $data) {
     $url = "$base/ghoststory/article/?id=$combined"
     $entry = @{ loc=$url; lastmod=$lastmod; changefreq="monthly"; priority="0.6" }
     $entries += $entry
+}
+
+# FAQ individual pages (from Data\Services.json, category contains '彙典')
+$svcPath = Join-Path $root "Data\Services.json"
+if (Test-Path $svcPath) {
+    $svcData = Get-Content -Raw -Encoding UTF8 $svcPath | ConvertFrom-Json
+    foreach ($svc in $svcData) {
+        $props = @($svc.PSObject.Properties)
+        $cat = if ($props.Count -gt 0) { [string]$props[0].Value } else { "" }
+        if ($cat.Length -lt 6) { continue }
+        # find ID property
+        $id = $null
+        foreach ($pr in $props) {
+            if ($pr.Name -eq 'ID') { $id = [string]$pr.Value }
+        }
+        $title = if ($props.Count -gt 1) { [string]$props[1].Value } else { "" }
+        $faqId = if ($id) { $id } else { $title }
+        if (-not $faqId) { continue }
+        $encoded = [System.Uri]::EscapeDataString($faqId)
+        $url = "$base/services/faq/?id=$encoded"
+        $entry = @{ loc=$url; lastmod=$today; changefreq="monthly"; priority="0.7" }
+        $entries += $entry
+    }
 }
 
 # Build XML

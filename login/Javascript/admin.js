@@ -148,7 +148,7 @@ async function ghWriteFile(pat, repo, path, content, message) {
 }
 
 // 產生 sitemap.xml 內容（與 Tool/generate-sitemap.ps1 邏輯一致）
-function buildSitemapXml(posts) {
+function buildSitemapXml(posts, services) {
 	const base = 'https://spiritref.github.io';
 	const today = new Date().toISOString().slice(0, 10);
 	const entries = [];
@@ -161,23 +161,37 @@ function buildSitemapXml(posts) {
 		{ loc: `${base}/`, changefreq: 'weekly', priority: '0.8' }
 	];
 	for (const s of staticPages) entries.push({ ...s, lastmod: today });
-	for (const post of posts) {
-		const pid = post && post['PostID'] != null ? String(post['PostID']) : '0';
-		const raw = post ? post['發佈日期'] : null;
-		let ts = '0000';
-		let lastmod = today;
-		if (raw) {
-			const d = (typeof raw === 'number')
-				? new Date((raw - 25569) * 86400 * 1000)
-				: new Date(raw);
-			if (!isNaN(d.getTime())) {
-				const pad = (n) => String(n).padStart(2, '0');
-				ts = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-				lastmod = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	// 文章頁
+	if (Array.isArray(posts)) {
+		for (const post of posts) {
+			const pid = post && post['PostID'] != null ? String(post['PostID']) : '0';
+			const raw = post ? (function(){const ks=Object.keys(post);for(const k of ks){if(typeof post[k]==='string' && /^\d{4}\/\d{2}\/\d{2}/.test(post[k])) return post[k];}return null;})() : null;
+			let ts = '0000';
+			let lastmod = today;
+			if (raw) {
+				const d = (typeof raw === 'number')
+					? new Date((raw - 25569) * 86400 * 1000)
+					: new Date(raw);
+				if (!isNaN(d.getTime())) {
+					const pad = (n) => String(n).padStart(2, '0');
+					ts = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+					lastmod = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+				}
 			}
+			const combined = `${pid}_${ts}`;
+			entries.push({ loc: `${base}/ghoststory/article/?id=${combined}`, lastmod, changefreq: 'monthly', priority: '0.6' });
 		}
-		const combined = `${pid}_${ts}`;
-		entries.push({ loc: `${base}/ghoststory/article/?id=${combined}`, lastmod, changefreq: 'monthly', priority: '0.6' });
+	}
+	// FAQ 個別頁面
+	if (Array.isArray(services)) {
+		for (const svc of services) {
+			const cat = svc ? (function(){const ks=Object.keys(svc);return ks.length? (svc[ks[0]] || '') : '';}()) : '';
+			if (String(cat).indexOf('\u5f59') === -1) continue;
+			const title = (function(){const ks=Object.keys(svc);return ks.length>1 ? (svc[ks[1]] || '') : '';}()) || '';
+			if (!title) continue;
+			const faqId = svc['ID'] || title;
+			entries.push({ loc: `${base}/services/faq/?id=${encodeURIComponent(faqId)}`, lastmod: today, changefreq: 'monthly', priority: '0.7' });
+		}
 	}
 	let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 	for (const e of entries) {
@@ -216,8 +230,22 @@ async function bumpVersion(pat, section, count) {
 function matchItem(p, m) {
 	if (!m) return false;
 	if (m.PostID !== undefined) return String(p['PostID']) === String(m.PostID);
-	if (m.keyTitle !== undefined) return p['標題'] === m.keyTitle;
+	if (m.ID !== undefined) return p['ID'] === m.ID;
+	if (m.keyTitle !== undefined) return p['\u6a19\u984c'] === m.keyTitle;
 	return false;
+}
+
+function generateSvcId(cat, arr) {
+	const prefix = (cat.charCodeAt(0) === 0x8D85) ? 'FAQ' : (cat.charCodeAt(0) === 0x8996) ? 'V' : 'S';
+	let max = 0;
+	for (const it of (arr || [])) {
+		const id = it && it['ID'];
+		if (typeof id === 'string' && id.indexOf(prefix + '_') === 0) {
+			const n = parseInt(id.slice(prefix.length + 1), 10);
+			if (!isNaN(n) && n > max) max = n;
+		}
+	}
+	return prefix + '_' + String(max + 1).padStart(3, '0');
 }
 
 function applyOps(arr, ops) {
@@ -255,6 +283,7 @@ async function saveAll() {
 		const pat = await ensurePat();
 		const files = [...new Set(pendingOps.map(o => o.file))];
 		let savedPosts = null;
+		let savedServices = null;
 		for (const file of files) {
 			const path = file === 'posts' ? jsonPostsPath : jsonSvcPath;
 			const next = await ghModifyJson(pat, JSON_REPO, path,
@@ -271,6 +300,7 @@ async function saveAll() {
 					renderNoticesAdmin();
 				} catch (e) {}
 			} else {
+				savedServices = next;
 				try {
 					const cat = svcCat;
 					allSvc = next.filter(i => String(i['分類'] || '') === cat);
@@ -278,11 +308,13 @@ async function saveAll() {
 				} catch (e) {}
 			}
 		}
-		// 自動更新 sitemap.xml（僅當文章有變更時）
-		if (savedPosts) {
+		// 自動更新 sitemap.xml（文章或服務有變更時）
+		if (savedPosts || savedServices) {
 			try {
-				const sitemapXml = buildSitemapXml(savedPosts);
-				await ghWriteFile(pat, JSON_REPO, 'sitemap.xml', sitemapXml, `Admin save sitemap (${savedPosts.length} posts)`);
+				const postsForSitemap = savedPosts || allPosts;
+				const servicesForSitemap = savedServices || null;
+				const sitemapXml = buildSitemapXml(postsForSitemap, servicesForSitemap);
+				await ghWriteFile(pat, JSON_REPO, 'sitemap.xml', sitemapXml, 'Admin save sitemap');
 			} catch (e) { console.warn('sitemap 更新失敗（不影響本體）:', e); }
 		}
 		await flushLogs(pat);
@@ -800,7 +832,7 @@ async function saveEdit() {
 		} else {
 			const cat = svcCat;
 			if (editing.idx === -1) {
-				const entry = { "分類": cat, "標題": f['標題'] || '', "貼文內容": f['貼文內容'] || '', "連結": f['連結'] || '' };
+				const entry = { "ID": generateSvcId(cat, allSvc), "\u5206\u985e": cat, "\u6a19\u984c": f["\u6a19\u984c"] || "", "\u8cbc\u6587\u5167\u5bb9": f["\u8cbc\u6587\u5167\u5bb9"] || "", "\u9023\u7d50": f["\u9023\u7d50"] || "" };
 				stage('services', { type: 'append', entry });
 				logOp('新增服務內容', `${cat} ${f['標題'] || ''}`);
 				allSvc.push(entry);
@@ -808,8 +840,8 @@ async function saveEdit() {
 				setStatus('已暫存，按上方儲存才寫入', 'orange');
 			} else {
 			const src = allSvc[editing.idx];
-			const useId = src['PostID'] !== undefined;
-			const match = useId ? { PostID: src['PostID'] } : { keyTitle: src['標題'] };
+			const useId = src['ID'] !== undefined;
+			const match = useId ? { ID: src['ID'] } : { keyTitle: src['標題'] };
 			allSvc[editing.idx] = { ...allSvc[editing.idx], ...f };
 			renderSvcRows();
 			stage(cat === '公告' ? 'posts' : 'services', { type: 'update', match, fields: f });
@@ -847,11 +879,11 @@ async function moveSvc(idx, dir) {
 	const it = allSvc[idx];
 	const ni = idx + dir;
 	if (ni < 0 || ni >= allSvc.length) return;
-	const useId = it['PostID'] !== undefined;
+	const useId = it['ID'] !== undefined;
 	const [m] = allSvc.splice(idx, 1);
 	allSvc.splice(ni, 0, m);
 	renderSvcRows();
-	stage('services', { type: 'move', match: useId ? { PostID: it['PostID'] } : { keyTitle: it['標題'] }, dir });
+	stage('services', { type: 'move', match: useId ? { ID: it['ID'] } : { keyTitle: it['標題'] }, dir });
 	logOp('移動服務順序', `${it['標題'] || ''} ${dir < 0 ? '上移' : '下移'}`);
 	setStatus('已暫存，按上方儲存才寫入', 'orange');
 }
@@ -869,10 +901,10 @@ async function delItem(kind, idx, btn) {
 			} else {
 				const cat = svcCat;
 				const it = allSvc[idx];
-				const useId = it['PostID'] !== undefined;
+				const useId = it['ID'] !== undefined;
 				allSvc.splice(idx, 1);
 				renderSvcRows();
-				stage(cat === '公告' ? 'posts' : 'services', { type: 'delete', match: useId ? { PostID: it['PostID'] } : { keyTitle: it['標題'] } });
+				stage(cat === '公告' ? 'posts' : 'services', { type: 'delete', match: useId ? { ID: it['ID'] } : { keyTitle: it['標題'] } });
 				logOp('刪除服務內容', `${cat} ${it['標題'] || ''}`);
 				setStatus('已暫存，按上方儲存才寫入', 'orange');
 			}
