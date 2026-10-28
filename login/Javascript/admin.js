@@ -236,7 +236,7 @@ function matchItem(p, m) {
 }
 
 function generateSvcId(cat, arr) {
-	const prefix = (cat.charCodeAt(0) === 0x8D85) ? 'FAQ' : (cat.charCodeAt(0) === 0x8996) ? 'V' : 'S';
+	const prefix = (cat.charCodeAt(0) === 0x8D85) ? 'Compendium' : (cat.charCodeAt(0) === 0x8996) ? 'Vision' : 'Ability';
 	let max = 0;
 	for (const it of (arr || [])) {
 		const id = it && it['ID'];
