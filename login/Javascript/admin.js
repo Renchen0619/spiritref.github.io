@@ -1109,13 +1109,14 @@ export async function initAdmin(sess) {
 		else if (b.dataset.sact === 'copy') {
 			const relativeUrl = b.dataset.url;
 			if (!relativeUrl) return;
-			// 轉成絕對網址
 			const absoluteUrl = new URL(relativeUrl, window.location.href).href;
-			// 寫入剪貼簿並呼叫你原本就有的 setStatus 提示
 			navigator.clipboard.writeText(absoluteUrl).then(() => {
-				setStatus(`✅ 已複製：${absoluteUrl}`, 'green');
+				setStatus(`✅ 已複製：\n${absoluteUrl}`, 'green');
+				setTimeout(() => { setStatus('', ''); }, 3000);
+                
 			}).catch(err => {
 				setStatus('❌ 複製失敗', 'red');
+				setTimeout(() => { setStatus('', ''); }, 3000);
 			});
 		}
 	};
