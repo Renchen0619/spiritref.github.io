@@ -83,7 +83,7 @@ if (Test-Path $svcPath) {
         $faqId = if ($id) { $id } else { $title }
         if (-not $faqId) { continue }
         $encoded = [System.Uri]::EscapeDataString($faqId)
-        $url = "$base/services/faq/?id=$encoded"
+        $url = "$base/services/faq/detail.html?id=$encoded"
         $entry = @{ loc=$url; lastmod=$today; changefreq="monthly"; priority="0.7" }
         $entries += $entry
     }

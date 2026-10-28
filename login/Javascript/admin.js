@@ -190,7 +190,7 @@ function buildSitemapXml(posts, services) {
 			const title = (function(){const ks=Object.keys(svc);return ks.length>1 ? (svc[ks[1]] || '') : '';}()) || '';
 			if (!title) continue;
 			const faqId = svc['ID'] || title;
-			entries.push({ loc: `${base}/services/faq/?id=${encodeURIComponent(faqId)}`, lastmod: today, changefreq: 'monthly', priority: '0.7' });
+			entries.push({ loc: `${base}/services/faq/detail.html?id=${encodeURIComponent(faqId)}`, lastmod: today, changefreq: 'monthly', priority: '0.7' });
 		}
 	}
 	let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
