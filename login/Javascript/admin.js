@@ -731,11 +731,19 @@ function renderSvcRows() {
 	}
 	$('svcRows').innerHTML = page.map((it) => {
 		const idx = allSvc.indexOf(it);
+		const cat = svcCat;
+		let lookhtml = '';
+		if (cat === '超自然現象彙典') {
+			////?id=Compendium_001
+			const artUrl = `../services/faq/detail.html?id=${encodeURIComponent(getCombinedId(it))}`;
+			lookhtml = '<a class="rowbtn" style="text-decoration:none;" href=' + artUrl + '" target="_blank">👁查看</a>'
+		}
 		return '<tr><td>' + esc(it['ID'] ?? idx + 1) + '</td>'
 		+ '<td class="title">' + esc(it['標題'] || '') + '</td>'
 		+ '<td style="white-space:nowrap;">'
 		+ '<button class="rowbtn" data-sact="up" data-i="' + idx + '">↑</button>'
 		+ '<button class="rowbtn" data-sact="down" data-i="' + idx + '">↓</button>'
+		+ lookhtml
 		+ '<button class="rowbtn" data-sact="preview" data-i="' + idx + '">預覽</button>'
 		+ '<button class="rowbtn" data-sact="edit" data-i="' + idx + '">編輯</button>'
 		+ '<button class="rowbtn" data-sact="del" data-i="' + idx + '">刪除</button>'
