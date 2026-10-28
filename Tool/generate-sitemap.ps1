@@ -1,11 +1,11 @@
 # generate-sitemap.ps1
 # Auto-generate sitemap.xml from Data\postFB.json
-# Usage (PowerShell):
-#   cd "C:\檔案Ren\SpiritRef\spiritref.github.io"
-#   .\generate-sitemap.ps1
+# Place this file in the Tool\ folder and run via run-sitemap.bat (double-click)
+# or: powershell -ExecutionPolicy Bypass -File .\Tool\generate-sitemap.ps1
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not $root) { $root = (Get-Location).Path }
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+# Project root is the parent of the Tool folder
+$root = Split-Path -Parent $scriptDir
 
 $jsonPath = Join-Path $root "Data\postFB.json"
 if (-not (Test-Path $jsonPath)) {
@@ -34,10 +34,8 @@ foreach ($s in $static) { $entries += $s }
 # Article pages (compute combined ID from postFB.json)
 foreach ($post in $data) {
     $props = @($post.PSObject.Properties)
-    # First property is PostID
     $postId = [string]$props[0].Value
     if (-not $postId) { $postId = "0" }
-    # Find the property whose value looks like a date "yyyy/MM/dd ..."
     $raw = $null
     foreach ($pr in $props) {
         if ($pr.Value -is [string] -and $pr.Value -match '^\d{4}/\d{2}/\d{2}') {
