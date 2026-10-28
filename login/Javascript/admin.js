@@ -104,6 +104,7 @@ async function ensurePat() {
 }
 
 // GitHub 讀-改-寫：transform(arr) 回傳新陣列；409 自動重試一次
+// github modify json
 async function ghModifyJson(pat, repo, path, transform, message) {
 	for (let attempt = 0; attempt < 2; attempt++) {
 		const api = `https://api.github.com/repos/${GITHUB_USER}/${repo}/contents/${path}`;
@@ -128,6 +129,67 @@ async function ghModifyJson(pat, repo, path, transform, message) {
 		return next;
 	}
 	throw new Error('連續衝突，請稍後再試');
+}
+
+// 通用文字檔寫入（sitemap.xml 等非 JSON 檔案）
+// generic file writer
+async function ghWriteFile(pat, repo, path, content, message) {
+	const api = `https://api.github.com/repos/${GITHUB_USER}/${repo}/contents/${path}`;
+	const h = ghHeaders(pat);
+	let sha = null;
+	const g = await fetch(api, { headers: h });
+	if (g.ok) sha = (await g.json()).sha;
+	else if (g.status !== 404) throw new Error(`讀取 ${path} 失敗: HTTP ${g.status}`);
+	const body = { message, content: toB64(content) };
+	if (sha) body.sha = sha;
+	const p = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+	if (!p.ok) throw new Error(`寫入 ${path} 失敗: HTTP ${p.status} ${(await p.text()).slice(0, 100)}`);
+	return true;
+}
+
+// 產生 sitemap.xml 內容（與 Tool/generate-sitemap.ps1 邏輯一致）
+function buildSitemapXml(posts) {
+	const base = 'https://spiritref.github.io';
+	const today = new Date().toISOString().slice(0, 10);
+	const entries = [];
+	const staticPages = [
+		{ loc: `${base}/services/`, changefreq: 'weekly', priority: '1.0' },
+		{ loc: `${base}/services/faq/`, changefreq: 'weekly', priority: '0.8' },
+		{ loc: `${base}/services/notices/`, changefreq: 'daily', priority: '0.8' },
+		{ loc: `${base}/services/consult.html`, changefreq: 'monthly', priority: '0.5' },
+		{ loc: `${base}/ghoststory/`, changefreq: 'daily', priority: '0.9' },
+		{ loc: `${base}/`, changefreq: 'weekly', priority: '0.8' }
+	];
+	for (const s of staticPages) entries.push({ ...s, lastmod: today });
+	for (const post of posts) {
+		const pid = post && post['PostID'] != null ? String(post['PostID']) : '0';
+		const raw = post ? post['發佈日期'] : null;
+		let ts = '0000';
+		let lastmod = today;
+		if (raw) {
+			const d = (typeof raw === 'number')
+				? new Date((raw - 25569) * 86400 * 1000)
+				: new Date(raw);
+			if (!isNaN(d.getTime())) {
+				const pad = (n) => String(n).padStart(2, '0');
+				ts = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+				lastmod = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+			}
+		}
+		const combined = `${pid}_${ts}`;
+		entries.push({ loc: `${base}/ghoststory/article/?id=${combined}`, lastmod, changefreq: 'monthly', priority: '0.6' });
+	}
+	let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+	for (const e of entries) {
+		xml += '  <url>\n';
+		xml += `    <loc>${e.loc}</loc>\n`;
+		xml += `    <lastmod>${e.lastmod}</lastmod>\n`;
+		xml += `    <changefreq>${e.changefreq}</changefreq>\n`;
+		xml += `    <priority>${e.priority}</priority>\n`;
+		xml += '  </url>\n';
+	}
+	xml += '</urlset>\n';
+	return xml;
 }
 
 async function bumpVersion(pat, section, count) {
@@ -185,12 +247,14 @@ function applyOps(arr, ops) {
 }
 
 // 儲存：各檔一次寫入＋版本戳＋操作紀錄一次結算
+// save all
 async function saveAll() {
 	if (!pendingOps.length && !pendingLogs.length) return;
 	setStatus('⏳ 儲存中...', 'blue');
 	try {
 		const pat = await ensurePat();
 		const files = [...new Set(pendingOps.map(o => o.file))];
+		let savedPosts = null;
 		for (const file of files) {
 			const path = file === 'posts' ? jsonPostsPath : jsonSvcPath;
 			const next = await ghModifyJson(pat, JSON_REPO, path,
@@ -198,6 +262,7 @@ async function saveAll() {
 				`Admin save ${file} (${pendingOps.filter(o => o.file === file).length} ops)`);
 			await bumpVersion(pat, file, next.length);
 			if (file === 'posts') {
+				savedPosts = next;
 				try {
 					allPosts = next;
 					allNotices = next.filter(i => String(i['標題'] || '').includes('公告'));
@@ -212,6 +277,13 @@ async function saveAll() {
 					renderSvcRows();
 				} catch (e) {}
 			}
+		}
+		// 自動更新 sitemap.xml（僅當文章有變更時）
+		if (savedPosts) {
+			try {
+				const sitemapXml = buildSitemapXml(savedPosts);
+				await ghWriteFile(pat, JSON_REPO, 'sitemap.xml', sitemapXml, `Admin save sitemap (${savedPosts.length} posts)`);
+			} catch (e) { console.warn('sitemap 更新失敗（不影響本體）:', e); }
 		}
 		await flushLogs(pat);
 		pendingOps = [];
@@ -866,6 +938,7 @@ async function healthCheck() {
 }
 
 // 重建版本戳（用現有 JSON 重新計算）
+// rebuild version
 async function rebuildVersion() {
 	setStatus('⏳ 重建版本戳...', 'blue');
 	try {
