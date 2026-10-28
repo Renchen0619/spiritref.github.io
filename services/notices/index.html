@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 1. 搜尋引擎設定 (解決顯示 GitHub 文件的關鍵) -->
+    <title>公告記錄 | 鬼磕頭</title>
+    <meta name="description" content="查看鬼磕頭日誌的最新公告、服務更新與靈異紀實紀錄。">
+
+    <!-- 2. 網站圖示 (使用您的絕對路徑) -->
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+
+    <!-- 3. 社群分享設定 (OG Tags) -->
+    <meta property="og:title" content="公告記錄 | 鬼磕頭">
+    <meta property="og:description" content="查看鬼磕頭日誌的最新公告、服務更新與靈異紀實紀錄。">
+    <meta property="og:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+	<meta property="og:url" content="https://spiritref.github.io/services/notices/">
+    <meta property="og:type" content="website">
+	<meta property="og:site_name" content="鬼磕頭">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="公告記錄 | 鬼磕頭">
+    <meta name="twitter:description" content="查看鬼磕頭日誌的最新公告、服務更新與靈異紀實紀錄。">
+    <meta name="twitter:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+	<link rel="stylesheet" href="https://spiritref.github.io/CSS/global.css">
+	<link rel="stylesheet" href="../CSS/cloud.css?v=20261011">
+	<style>
+		body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #f8f9fa; padding: 20px; color: #333; line-height: 1.6; }
+		.list-container { max-width: 850px; margin: auto; background: rgba(216, 213, 208, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); border: 1px solid #eaeaea; color: #333333; }
+		h1 { text-align: center; color: #1a1a1a; font-size: 2.2em; font-weight: 900; margin-top: 0; letter-spacing: 2px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+		
+		.controls { 
+			display: flex; 
+			justify-content: space-between; 
+			align-items: center; 
+			margin-bottom: 25px; 
+			padding-bottom: 15px; 
+			border-bottom: 1px solid #f0f0f0; 
+			color: #555555; 
+			font-weight: bold;
+			flex-wrap: wrap; 
+			gap: 10px;
+		}
+		
+		/* 牛皮紙質感卡片 */
+		.item { padding: 20px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(247,235,215,0.68) 0%, rgba(230,211,175,0.68) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; border-radius: 8px; color: #3e2723; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: box-shadow 0.3s, transform 0.3s; white-space: pre-line; word-wrap: break-word; }
+		.item:hover { box-shadow: 0 6px 16px rgba(139, 115, 85, 0.15); transform: translateY(-2px); }
+		.item:last-child { margin-bottom: 0; }
+		.date { color: #4a2e1b; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
+		
+		.pagination { margin-top: 40px; padding-top: 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; row-gap: 10px; color: #555555; font-weight: bold; }
+		.pagination .jump-group { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+		.page-btn { padding: 8px 20px; background: #ffffff; color: #333333; border: 1px solid #cccccc; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.3s; }
+		.page-btn:disabled { background: #f9f9f9; color: #aaaaaa; border-color: #eeeeee; cursor: not-allowed; }
+		.page-btn:hover:not(:disabled) { background: #faf6f0; border-color: #8b7355; color: #8b7355; }
+		.jump-select { background: #ffffff; color: #333333; border: 1px solid #cccccc; padding: 6px 12px; border-radius: 6px; font-family: inherit; outline: none; transition: border-color 0.3s; }
+		.jump-select:focus { border-color: #8b7355; box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.2); }
+
+		@media (max-width: 600px) {
+			body { padding: 10px; }
+			.list-container { padding: 15px; }
+			h1 { font-size: 1.8em; }
+			.controls { flex-direction: column; align-items: flex-start; }
+			.pagination { gap: 6px; }
+			.page-btn { padding: 6px 10px; font-size: 0.85rem; }
+			.jump-select { padding: 4px 6px; font-size: 0.85rem; max-width: 64px; }
+			.jump-label { display: none; }
+			#pageInfo { font-size: 0.85rem; }
+		}
+	</style>
+</head>
+<body class="cloud-bg">
+<div id="cloud-container"></div>
+	
+<div class="expandable-menu-container" id="menuContainer">
+	<div class="menu-content" id="menuContent"></div>
+	<button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+		<span id="serviceIcon">
+	        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	            <line x1="3" y1="12" x2="21" y2="12"></line>
+	            <line x1="3" y1="6" x2="21" y2="6"></line>
+	            <line x1="3" y1="18" x2="21" y2="18"></line>
+	        </svg>
+	    </span>
+		<span id="serviceText">選單</span>
+	</button>
+</div>
+	
+<div class="list-container">
+	<a href="../index.html" class="back-home">&#x2190;&#xFE0E; 返回首頁</a>
+	<h1>公告記錄</h1>
+
+	<div class="controls">
+		<div>每頁顯示：
+			<select id="pageSize" onchange="changePageSize()">
+				<option value="10">10 條</option>
+				<option value="20">20 條</option>
+				<option value="50">50 條</option>
+			</select>
+		</div>
+		<div id="totalCount">共 0 筆</div>
+	</div>
+
+	<div id="list-content">載入中...</div>
+
+	<div class="pagination">
+		<button id="prevBtn" class="page-btn" onclick="prevPage()">上一頁</button>
+		
+		<span class="jump-group"><span class="jump-label">跳至第</span> 
+			<select id="pageJump" class="jump-select" onchange="jumpToPage()">
+				<option value="1">1</option>
+			</select><span class="jump-label">頁</span>
+		</span>
+
+		<span id="pageInfo">第 1 頁</span>
+		<button id="nextBtn" class="page-btn" onclick="nextPage()">下一頁</button>
+	</div>
+</div>
+	
+<footer>
+	<p>&copy; 2026 鬼磕頭. All Rights Reserved.</p>
+</footer>
+	
+<script type="module">
+	import * as Global from '/Javascript/global.js?v=20261011';
+
+	let JSON_PATH = ""; // 💡 儲存 INI 裡的靜態 JSON 路徑
+	let allNotices = [];
+	let currentPage = 1;
+	let pageSize = 10;
+	const iniPath = '/settings/global.ini';
+
+	async function init() {
+		try {
+			const p = new URLSearchParams(location.search).get('page');
+			if (p) { const pn = parseInt(p, 10); if (!isNaN(pn) && pn > 0) currentPage = pn; }
+		} catch (e) {}
+		// 1. cache
+		// 1. 優先讀取快取
+		const cache = localStorage.getItem('cache_notices');
+		if (cache) {
+			try {
+				allNotices = JSON.parse(cache);
+				updateUI();
+			} catch (e) { allNotices = []; }
+		}
+
+		try {
+			const config = await Global.getIni(iniPath);
+			if (config.MENU_DATA) Global.initMenu(config.MENU_DATA);
+			if (config) {
+				// 💡 靜態 JSON（資料庫 = GitHub）
+				JSON_PATH = config.JsonNotice || config.JsonData;
+
+				// 💡 如果快取沒資料，立刻先抓靜態 JSON
+				if (allNotices.length === 0 && JSON_PATH) {
+					await fetchStaticJson();
+				}
+
+				// 2. 版本比對，有更新才重抓
+				refreshFromVersion();
+			}
+		} catch (e) {
+			console.error("初始化失敗", e);
+		}
+	}
+
+	/**
+	 * 💡 核心邏輯：抓取靜態 JSON 備份
+	 */
+	async function fetchStaticJson() {
+		try {
+			// 處理多一層 ghoststory 的路徑問題
+			let finalPath = JSON_PATH;
+			if (window.location.pathname.includes('/article/') || window.location.pathname.includes('/ghoststory/')) {
+				finalPath = JSON_PATH.startsWith('../') ? JSON_PATH : '../' + JSON_PATH;
+			}
+
+			const sep = finalPath.includes('?') ? '&' : '?';
+			const res = await fetch(`${finalPath}${sep}t=${Date.now()}`, { cache: 'no-store' });
+			if (res.ok) {
+				const data = await res.json();
+				// 過濾與排序（置頂優先，再按日期倒序）
+				const filtered = data.filter(i => String(i["標題"] || "").includes("公告"))
+									 .sort((a, b) => ((b["置頂"] === true) - (a["置頂"] === true)) || (new Date(b["發佈日期"]) - new Date(a["發佈日期"])));
+				
+				allNotices = filtered;
+				console.log("📄 已載入靜態 JSON 公告備份");
+				updateUI();
+			}
+		} catch (e) {
+			console.warn("無法讀取靜態 JSON:", e);
+		}
+	}
+
+	async function refreshFromVersion() {
+		let remoteVer = null;
+		try {
+			remoteVer = await Global.getRemoteVersion();
+		} catch (e) {}
+		if (!remoteVer) return;
+		try {
+			if (localStorage.getItem('data_ver') === remoteVer && allNotices.length > 0) return;
+		} catch (e) {}
+		if (!JSON_PATH) return;
+		await fetchStaticJson();
+		try {
+			localStorage.setItem('cache_notices', JSON.stringify(allNotices));
+			localStorage.setItem('data_ver', remoteVer);
+			console.log("✅ 公告已更新到最新版本");
+		} catch (e) {}
+	}
+
+	function updateUI() {
+		document.getElementById('totalCount').innerText = `共 ${allNotices.length} 筆`;
+		updateJumpSelect();
+		render();
+	}
+
+	function updateJumpSelect() {
+		const select = document.getElementById('pageJump');
+		const maxPage = Math.ceil(allNotices.length / pageSize) || 1;
+		let options = "";
+		for (let i = 1; i <= maxPage; i++) {
+			options += `<option value="${i}" ${i === currentPage ? 'selected' : ''}>${i}</option>`;
+		}
+		select.innerHTML = options;
+	}
+
+	function render() {
+		if (allNotices.length === 0) return;
+		const start = (currentPage - 1) * pageSize;
+		const end = start + pageSize;
+		const pagedData = allNotices.slice(start, end);
+
+		document.getElementById('list-content').innerHTML = pagedData.map(i => {
+			const dateStr = i["發佈日期"] ? new Date(i["發佈日期"]).toLocaleDateString() : "近期";
+			const pin = i["置頂"] === true ? "📌" : "";
+			return `
+				<div class="item">
+					<div class="date">${pin}[${dateStr}]</div>
+					<div class="content">${i["貼文內容"] || i["內容"]}</div>
+				</div>
+			`;
+		}).join('');
+
+		const maxPage = Math.ceil(allNotices.length / pageSize) || 1;
+		document.getElementById('pageInfo').innerText = ` / ${maxPage} 頁`;
+		document.getElementById('prevBtn').disabled = currentPage === 1;
+		document.getElementById('nextBtn').disabled = end >= allNotices.length;
+		
+		document.getElementById('pageJump').value = currentPage;
+		syncPageUrl(currentPage);
+	}
+
+	function syncPageUrl(page) {
+    try {
+        const url = new URL(location.href);
+        if (page && page > 1) url.searchParams.set('page', page);
+        else url.searchParams.delete('page');
+        history.replaceState(null, '', url.toString());
+    } catch (e) {}
+}
+
+window.changePageSize = () => {
+		pageSize = parseInt(document.getElementById('pageSize').value);
+		currentPage = 1;
+		updateJumpSelect();
+		render();
+		syncPageUrl(1);
+	};
+
+	window.jumpToPage = () => {
+		const select = document.getElementById('pageJump');
+		currentPage = parseInt(select.value);
+		render();
+		syncPageUrl(currentPage);
+		window.scrollTo(0, 0);
+	};
+
+	window.prevPage = () => { if(currentPage > 1) { currentPage--; render(); syncPageUrl(currentPage); window.scrollTo(0,0); } };
+	window.nextPage = () => { if(currentPage * pageSize < allNotices.length) { currentPage++; render(); syncPageUrl(currentPage); window.scrollTo(0,0); } };
+
+	window.addEventListener('DOMContentLoaded', init);
+</script>
+<script type="module" src="/Javascript/global.js?v=20261011"></script>
+<script src="../Javascript/cloud.js?v=20261012"></script>
+</body>
+</html>

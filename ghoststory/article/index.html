@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>載入中... | 鬼磕頭日誌</title>
+	<meta name="description" content="穿梭陰陽，紀錄最真實的靈界對話。收錄鬼磕頭紀實、靈異故事與真實案例。">
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:title" content="鬼磕頭日誌 | 靈界紀實">
+    <meta property="og:description" content="穿梭陰陽，紀錄最真實的靈界對話。">
+    <meta property="og:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:url" content="https://spiritref.github.io/ghoststory/">
+    <meta property="og:type" content="website">
+	<meta property="og:site_name" content="鬼磕頭日誌 | 靈界紀實">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="鬼磕頭日誌 | 靈界紀實">
+    <meta name="twitter:description" content="穿梭陰陽，紀錄最真實的靈界對話。">
+    <meta name="twitter:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+	
+	<link rel="stylesheet" href="/CSS/global.css?v=20261011">
+    <link rel="stylesheet" href="/ghoststory/CSS/postFB.css?v=20261011">
+    <style>
+		:root {
+		    --bg-main: #f0f2f5;
+		    --bg-card: #ffffff;
+		    --text-title: #1c1e21;
+		    --text-body: #333333;
+		    --text-date: #65676b;
+		    --border-color: #eeeeee;
+		    --base-size: 1.1rem; /* 預設內容字體大小 */
+		}
+
+		body.dark-mode {
+		    --bg-main: #18191a;
+		    --bg-card: #1e1e1e;
+		    --text-title: #f5f5f5;
+		    --text-body: #e0e0e0;
+		    --text-date: #a0a0a0;
+		    --border-color: #333333;
+		}
+		
+		body { 
+		    background: var(--bg-main); 
+		    color: var(--text-body);
+		    transition: background 0.3s, color 0.3s;
+			margin: 0; padding: 0; overflow-x: hidden;
+		}
+		
+		.article-container { 
+		    background: var(--bg-card); 
+		    border-radius: 12px;
+		    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* 稍微優化了陰影，讓卡片在深淺色下更有立體感 */
+		    width: 95%; 
+		    max-width: 800px; 
+		    margin: 20px auto 120px auto; 
+		    padding: 20px; 
+		    box-sizing: border-box; 
+		    transition: background 0.3s, box-shadow 0.3s; /* 讓切換深淺色時有平滑的過渡效果 */
+		}
+		
+		h1#art-title { font-size: 1.5rem; line-height: 1.4; color: var(--text-title); margin: 15px 0; }
+		.post-date { color: var(--text-date); font-size: 0.85rem; margin-top: 15px; line-height: 1.4;}
+		.article-hr { border: 0; border-top: 1px solid var(--border-color); }
+		.full-content { 
+		    font-size: var(--base-size); 
+		    color: var(--text-body); 
+			line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; margin-top: 20px; 
+		}
+		
+		/* ✨ 新增控制按鈕樣式 */
+		.top-controls {
+		    display: flex;
+			align-items: center;
+		    gap: 10px;
+		    margin: 0;
+		    flex-wrap: wrap;
+		}
+		.btn-ui {
+		    padding: 6px 12px;
+		    border: 1px solid var(--border-color);
+		    background: var(--bg-main);
+		    color: var(--text-body);
+		    border-radius: 6px;
+		    cursor: pointer;
+		    font-size: 0.9rem;
+			transition: all 0.2s;
+		}
+		.btn-ui:hover {
+            opacity: 0.9;
+        }
+        .full-img { width: 100%; max-width: 100%; height: auto; display: block; margin: 20px auto; border-radius: 8px; }
+        .loading-hint { text-align: center; color: #888; padding: 100px 20px; font-style: italic; }
+
+        @media (max-width: 600px) {
+            .article-container { width: 100%; margin-top: 0; border-radius: 0; padding: 15px; }
+            h1#art-title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="expandable-menu-container" id="menuContainer">
+    <div class="menu-content" id="menuContent"></div>
+    <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+        <span id="serviceIcon">
+	        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	            <line x1="3" y1="12" x2="21" y2="12"></line>
+	            <line x1="3" y1="6" x2="21" y2="6"></line>
+	            <line x1="3" y1="18" x2="21" y2="18"></line>
+	        </svg>
+	    </span>
+        <span id="serviceText">選單</span>
+    </button>
+</div>
+    
+<div class="container article-container">
+	<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <a href="../index.html" class="back-home">&#x2190;&#xFE0E; 紀實首頁</a>
+        
+        <div class="top-controls">
+            <button class="back-home" onclick="changeFS(0.1)">A+</button>
+            <button class="back-home" onclick="changeFS(-0.1)">A-</button>
+            <button id="darkBtn" class="back-home" onclick="toggleDark()">🌙 深色</button>
+        </div>
+    </div>
+
+    <div id="art-date" class="post-date"></div>
+    <h1 id="art-title">正在讀取內容...</h1>
+    <hr style="border: 0; border-top: 1px solid #eee;">
+    <div id="art-images"></div>
+    <div id="art-body" class="full-content">
+        <div class="loading-hint">正在感應靈界紀錄...</div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2026 鬼磕頭日誌 | 靈界紀實. All Rights Reserved.</p>
+</footer>
+
+<script type="module">
+    import { getIni } from '/Javascript/global.js';
+
+    window.toggleMenu = function() {
+        const menu = document.getElementById('menuContainer');
+        if (menu) menu.classList.toggle('show-menu');
+    };
+
+    function formatDate(raw) {
+        if (!raw) return "未知日期";
+        let d = (typeof raw === 'number') ? new Date((raw - 25569) * 86400 * 1000) : new Date(raw);
+        if (isNaN(d.getTime())) return raw;
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function getCombinedId(post) {
+        const pid = post["PostID"] || "0";
+        let d = (typeof post["發佈日期"] === 'number') ? new Date((post["發佈日期"] - 25569) * 86400 * 1000) : new Date(post["發佈日期"]);
+        if (isNaN(d.getTime())) return `${pid}_0000`;
+        const pad = (n) => String(n).padStart(2, '0');
+        const ts = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        return `${pid}_${ts}`;
+    }
+
+    async function init() {
+		applySettings();
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id');
+        if (!targetId) {
+            document.getElementById('art-body').innerText = "連結無效，請返回列表重新進入。";
+            return;
+        }
+
+        const cached = localStorage.getItem('cached_novel_data');
+        if (cached) {
+            try {
+                console.log("使用快取渲染");
+                renderPost(JSON.parse(cached), targetId);
+            } catch (e) {}
+        }
+
+        try {
+            const config = await getIni('/settings/global.ini');
+            if (!config) return;
+
+            if (config.MENU_DATA) renderMenu(config.MENU_DATA);
+
+            // 資料庫 = GitHub 靜態 JSON
+            const jsonPath = config.JsonData;
+            if (jsonPath) {
+                try {
+                    const sep = jsonPath.includes('?') ? '&' : '?';
+                    const staticRes = await fetch(`${jsonPath}${sep}t=${Date.now()}`, { cache: 'no-store' });
+                    if (staticRes.ok) {
+                        const staticData = await staticRes.json();
+                        console.log("使用 JSON 同步");
+                        try { localStorage.setItem('cached_novel_data', JSON.stringify(staticData)); } catch (e) {}
+                        renderPost(staticData, targetId);
+                    }
+                } catch(e) { console.warn("JSON 載入失敗"); }
+            }
+        } catch (e) { 
+            console.error("載入流程異常:", e); 
+        }
+    }
+
+    function renderPost(data, id) {
+        const post = data.find(p => getCombinedId(p) === id);
+        if (post) {
+            if (document.getElementById('art-title').innerText === post["標題"]) {
+                document.getElementById('art-body').innerText = post["貼文內容"];
+                return; 
+            }
+
+            document.title = `${post["標題"]} | 鬼磕頭日誌`;
+            document.getElementById('art-title').innerText = post["標題"];
+            document.getElementById('art-date').innerText = formatDate(post["發佈日期"]);
+            document.getElementById('art-body').innerText = post["貼文內容"];
+            
+            const imgBox = document.getElementById('art-images');
+            imgBox.innerHTML = '';
+            const imgData = post["圖片網址"] || post["圖片"] || "";
+            if (imgData) {
+                imgData.split(/\r?\n|\|/).forEach(src => {
+                    if(src.trim()) {
+                        const img = document.createElement('img');
+                        const cleanSrc = src.trim();
+                        img.src = cleanSrc.startsWith('http') ? cleanSrc : "../" + cleanSrc; 
+                        img.className = 'full-img';
+                        imgBox.appendChild(img);
+                    }
+                });
+            }
+        }
+    }
+
+    function renderMenu(menuData) {
+        const menuContent = document.getElementById('menuContent');
+        if (!menuContent) return;
+        menuContent.innerHTML = ''; 
+        menuData.split('|').forEach(item => {
+            const parts = item.split(',');
+            if (parts.length >= 3) {
+                const [text, link, icon] = parts;
+                const a = document.createElement('a');
+                a.href = link; 
+                a.className = 'menu-item';
+                a.innerHTML = `<span class="icon">${icon}</span> <span class="text">${text}</span>`;
+                menuContent.appendChild(a);
+            }
+        });
+    }
+	window.toggleDark = () => {
+	    const isDark = document.body.classList.toggle('dark-mode');
+	    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+	    updateBtnText(isDark);
+	};
+	function updateBtnText(isDark) {
+	    const btn = document.getElementById('darkBtn');
+	    if (btn) btn.innerText = isDark ? "☀️ 淺色" : "🌙 深色";
+	}
+	let currentFS = parseFloat(localStorage.getItem('fontSize')) || 1.1;
+	window.changeFS = (delta) => {
+	    currentFS = Math.min(Math.max(currentFS + delta, 0.8), 2.0); // 限制 0.8rem ~ 2.0rem
+	    document.documentElement.style.setProperty('--base-size', currentFS + 'rem');
+	    localStorage.setItem('fontSize', currentFS);
+	};
+	function applySettings() {
+	    // 檢查深色模式
+	    const savedTheme = localStorage.getItem('theme');
+	    if (savedTheme === 'dark') {
+	        document.body.classList.add('dark-mode');
+	        updateBtnText(true);
+	    }
+	    // 檢查字體
+	    document.documentElement.style.setProperty('--base-size', currentFS + 'rem');
+	}
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

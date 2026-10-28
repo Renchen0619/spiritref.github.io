@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>超自然現象彙典 | 鬼磕頭</title>
+    <meta name="description" content="針對靈學服務、驅鬼儀式及常見疑問的專業解答。">
+
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+
+    <link rel="stylesheet" href="https://spiritref.github.io/CSS/global.css">
+    <link rel="stylesheet" href="../CSS/Services.css?v=20261011">
+    <link rel="stylesheet" href="../CSS/cloud.css?v=20261011">
+
+    <meta property="og:title" content="超自然現象彙典 | 鬼磕頭">
+    <meta property="og:description" content="針對靈學服務、驅鬼儀式及常見疑問的專業解答。">
+    <meta property="og:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:url" content="https://spiritref.github.io/services/faq/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="鬼磕頭">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="超自然現象彙典 | 鬼磕頭">
+    <meta name="twitter:description" content="專業靈學服務與常見疑問解答">
+    <meta name="twitter:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+
+    <style>
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #f8f9fa; padding: 20px; color: #333; line-height: 1.8; }
+        .list-container { max-width: 850px; margin: auto; background: rgba(216, 213, 208, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); border: 1px solid #eaeaea; color: #333333; }
+        h1 { text-align: center; color: #1a1a1a; font-size: 2.2em; font-weight: 900; margin-top: 0; letter-spacing: 2px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+        
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0; color: #555555; font-weight: bold; }
+
+        /* 牛皮紙質感卡片 - 高度自適應 */
+        .notice-item { padding: 12px; margin-bottom: 8px; background: linear-gradient(135deg, rgba(247,235,215,0.68) 0%, rgba(230,211,175,0.68) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; border-radius: 8px; color: #3e2723; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: box-shadow 0.3s, transform 0.3s; height: auto; min-height: 0; }
+        .notice-item:hover { box-shadow: 0 6px 16px rgba(139, 115, 85, 0.15); transform: translateY(-2px); }
+        .notice-item:last-child { margin-bottom: 0; }
+
+        .faq-q { font-weight: 900; font-size: 1.1em; color: #4a2e1b; margin-bottom: 2px; line-height: 1.4; }
+        .faq-a { color: #5c4332; padding-left: 20px; font-weight: 600; white-space: pre-line; line-height: 1.6; }
+		.faq-links { margin-top: 4px; padding-top: 4px;border-top: 1px dashed #2a2a2d;font-size: 0.9rem;color: #88888d;display: flex;flex-wrap: wrap;align-items: center;gap: 8px;}
+		.faq-links a { display: inline-flex; 
+			align-items: center;
+			justify-content: center;
+			text-decoration: none; 
+			
+			/* 背景與邊框：使用您要求的 rgba 背景與金邊 */
+			background: rgba(28, 30, 33, 0.95); 
+			border: 1px solid #ffc107; 
+			
+			/* 字體顏色與間距 */
+			color: #ffc107; 
+			height: 36px;
+			padding: 0px 16px;
+			font-size: 0.9rem; 
+			border-radius: 8px; /* 圓角與選單一致 */
+			margin-top: 6px;
+			
+			/* 動態效果：與懸浮按鈕一樣的過渡 */
+			transition: all 0.3s ease;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+			box-sizing: border-box;    /* 確保邊框和內距不會額外撐大 button */
+			cursor: pointer;          /* 讓按鈕滑鼠滑過去時也有「小手」指針 */
+			font-family: inherit;     /* 關鍵：強制按鈕繼承網頁主字體，否則 button 字體常會縮小或變形 */
+			line-height: 1; 
+		}
+		.faq-links a:hover { background: #000000; color: #ffc107; transform: scale(1.05); }
+        .date-label { display: block; color: #999; font-size: 0.8rem; margin-bottom: 5px; }
+
+        .pagination { margin-top: 40px; padding-top: 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; row-gap: 10px; color: #555555; font-weight: bold; }
+        .pagination .jump-group { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+        .page-btn { padding: 8px 20px; background: #ffffff; color: #333333; border: 1px solid #cccccc; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.3s; }
+        .page-btn:disabled { background: #f9f9f9; color: #aaaaaa; border-color: #eeeeee; cursor: not-allowed; }
+        .page-btn:hover:not(:disabled) { background: #faf6f0; border-color: #8b7355; color: #8b7355; }
+        .jump-select { background: #ffffff; color: #333333; border: 1px solid #cccccc; padding: 6px 12px; border-radius: 6px; font-family: inherit; outline: none; transition: border-color 0.3s; }
+        .jump-select:focus { border-color: #8b7355; box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.2); }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .list-container { padding: 15px; }
+            .faq-a { padding-left: 15px; }
+            .pagination { gap: 6px; }
+            .page-btn { padding: 6px 10px; font-size: 0.85rem; }
+            .jump-select { padding: 4px 6px; font-size: 0.85rem; max-width: 64px; }
+            .jump-label { display: none; }
+            #pageInfo { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body class="cloud-bg">
+<div id="cloud-container"></div>
+
+<div class="expandable-menu-container" id="menuContainer">
+    <div class="menu-content" id="menuContent"></div>
+    <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+        <span id="serviceIcon">
+	        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	            <line x1="3" y1="12" x2="21" y2="12"></line>
+	            <line x1="3" y1="6" x2="21" y2="6"></line>
+	            <line x1="3" y1="18" x2="21" y2="18"></line>
+	        </svg>
+	    </span>
+        <span id="serviceText">選單</span>
+    </button>
+</div>
+    
+<div class="list-container">
+    <a href="../index.html" class="back-home">&#x2190;&#xFE0E; 返回首頁</a>
+    <h1>超自然現象彙典</h1>
+
+    <div class="controls">
+	    <div>每頁顯示：
+	        <select id="pageSize" onchange="changePageSize()">
+	            <option value="10">10 條</option>
+	            <option value="20">20 條</option>
+	            <option value="50">50 條</option>
+	        </select>
+	    </div>
+	    <div id="totalCount">共 0 筆</div>
+	</div>
+	
+	<div id="list-content">載入中...</div>
+	
+	<div class="pagination">
+	    <button id="prevBtn" class="page-btn" onclick="prevPage()">上一頁</button>
+	    
+	    <span class="jump-group"><span class="jump-label">跳至第</span> 
+	        <select id="pageJump" class="jump-select" onchange="jumpToPage()">
+	            </select><span class="jump-label">頁</span>
+	    </span>
+	
+	    <span id="pageInfo">第 1 頁</span>
+	    <button id="nextBtn" class="page-btn" onclick="nextPage()">下一頁</button>
+	</div>
+</div>
+	
+<footer>
+	<p>&copy; 2026 鬼磕頭. All Rights Reserved.</p>
+</footer>
+	
+<script type="module">
+	import * as Global from '/Javascript/global.js?v=20261011';
+
+    let allFAQs = [];
+    let currentPage = 1;
+    let pageSize = 10;
+    let jsonServicePath = "";
+    const iniPath = '/settings/global.ini';
+
+    async function init() {
+        // 支援 ?page=N 分頁
+        try {
+            const p = new URLSearchParams(location.search).get('page');
+            if (p) { const pn = parseInt(p, 10); if (!isNaN(pn) && pn > 0) currentPage = pn; }
+        } catch (e) {}
+        // 1. cache
+        const cached = localStorage.getItem('cache_services');
+        if (cached) {
+            try { processData(JSON.parse(cached)); } catch (e) {}
+        }
+
+        try {
+            const config = await Global.getIni(iniPath);
+            if (config) {
+                if (config.MENU_DATA) Global.initMenu(config.MENU_DATA);
+                jsonServicePath = config.JsonService || "";
+
+                // 2. 靜態補位 (若快取無資料，則讀取靜態 JSON)
+                if (allFAQs.length === 0 && jsonServicePath) {
+                    await fetchStaticJson(jsonServicePath);
+                }
+
+                // 3. 版本比對，有更新才重抓
+                refreshFromVersion();
+            }
+        } catch (e) { console.error("初始化失敗", e); }
+    }
+
+    async function fetchStaticJson(path) {
+        try {
+            const sep = path.includes('?') ? '&' : '?';
+            const res = await fetch(`${path}${sep}t=${Date.now()}`, { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                processData(data);
+                return true;
+            }
+        } catch (e) { console.warn("靜態讀取失敗:", e); }
+        return false;
+    }
+
+    async function refreshFromVersion() {
+        let remoteVer = null;
+        try { remoteVer = await Global.getRemoteVersion(); } catch (e) {}
+        if (!remoteVer) return;
+        try {
+            if (localStorage.getItem('data_ver') === remoteVer && allFAQs.length > 0) return;
+        } catch (e) {}
+        if (!jsonServicePath) return;
+        try {
+            const sep = jsonServicePath.includes('?') ? '&' : '?';
+            const r = await fetch(`${jsonServicePath}${sep}t=${Date.now()}`, { cache: 'no-store' });
+            if (!r.ok) return;
+            const data = await r.json();
+            processData(data);
+            localStorage.setItem('cache_services', JSON.stringify(data));
+            localStorage.setItem('data_ver', remoteVer);
+            console.log("✅ 已更新到最新版本");
+        } catch (e) { console.warn("更新失敗:", e); }
+    }
+
+    function processData(data) {
+        if (!data || !Array.isArray(data)) return;
+
+        // 【核心篩選】只抓取「分類」為「常見問題」的資料，並按日期排序
+        allFAQs = data.filter(item => { const ks = Object.keys(item); const cat = ks.length ? item[ks[0]] : ''; return String(cat).indexOf('\u5f59') !== -1; }).sort((a, b) => { const ka = Object.keys(a); const kb = Object.keys(b); const ia = (a['ID'] || (ka.length>1?a[ka[1]]:'')); const ib = (b['ID'] || (kb.length>1?b[kb[1]]:'')); return String(ia).localeCompare(String(ib)); });
+
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('totalCount').innerText = `共 ${allFAQs.length} 筆`;
+        render();
+        syncPageUrl(currentPage);
+    }
+
+    // 阿拉伯數字轉國字（1→一、10→十、11→十一、21→二十一、101→一百零一）
+    function cnNum(n) {
+        const d = ['\u96f6','\u4e00','\u4e8c','\u4e09','\u56db','\u4e94','\u516d','\u4e03','\u516b','\u4e5d'];
+        n = Number(n);
+        if (!n || n < 0) return '';
+        if (n < 10) return d[n];
+        if (n < 20) return '\u5341' + (n % 10 ? d[n % 10] : '');
+        if (n < 100) return d[Math.floor(n / 10)] + '\u5341' + (n % 10 ? d[n % 10] : '');
+        const h = Math.floor(n / 100), r = n % 100;
+        let str = d[h] + '\u767e';
+        if (!r) return str;
+        if (r < 10) return str + '\u96f6' + d[r];
+        if (r < 20) return str + '\u4e00' + cnNum(r);
+        return str + cnNum(r);
+    }
+
+
+
+
+    function render() {
+	    const listContent = document.getElementById('list-content');
+	    const start = (currentPage - 1) * pageSize;
+	    const end = start + pageSize;
+	    const pagedData = allFAQs.slice(start, end);
+	
+	    if (allFAQs.length === 0) {
+	        listContent.innerHTML = "目前暫無符合條件的常見問題項目。";
+	        return;
+	    }
+	
+	    // ✨ 核心修正：計算跨頁連續編號 (start + index + 1)
+	    listContent.innerHTML = pagedData.map((item, index) => {
+	        const ks = Object.keys(item);
+	        const q = ks.length > 1 ? item[ks[1]] : "";
+	        const a = ks.length > 2 ? (item[ks[2]] || "no content") : "no content";
+	        const posturl = ks.length > 3 ? (item[ks[3]] || "") : "";
+	        const qNumber = start + index + 1; 
+	        
+	        // 處理多個連結：支援陣列，或是以逗號、換行、空格分隔的字串
+	        let urlArray = [];
+	        if (Array.isArray(posturl)) {
+	            urlArray = posturl;
+	        } else if (typeof posturl === "string" && posturl.trim() !== "") {
+	            // 利用正規表達式分割字串，並過濾掉空值
+	            urlArray = posturl.split(/[,\n\s]+/).filter(url => url.trim() !== "");
+	        }
+	        
+	        // 將連結陣列轉換為 HTML `<a>` 標籤，並以 <br> 換行
+	        const linksHtml = urlArray.length > 0 
+				? `<div class="faq-links"><span>相關文章：</span>${urlArray.map((url, i) => `<a href="${url}" target="_blank" rel="noopener noreferrer">篇章蟲洞</a>`).join('')}</div>` 
+				: "";
+	
+	        return `
+	            <div class="notice-item">
+	                <div class="faq-q">第${cnNum(qNumber)}章 <a href="detail.html?id=${encodeURIComponent(item.ID || q)}" style="color:inherit;text-decoration:underline;">${q}</a></div>
+	                <div class="faq-a">
+						<div class="faq-answer-text">${a}</div>
+						${linksHtml}
+					</div>
+	            </div>
+	        `;
+	    }).join('');
+	
+	    const maxPage = Math.ceil(allFAQs.length / pageSize) || 1;
+	    
+	    // 更新頁碼文字
+	    document.getElementById('pageInfo').innerText = ` / ${maxPage} 頁`;
+	    document.getElementById('prevBtn').disabled = currentPage === 1;
+	    document.getElementById('nextBtn').disabled = end >= allFAQs.length;
+	
+	    // ✨ 更新跳頁選單內容
+	    const pageJump = document.getElementById('pageJump');
+	    let options = "";
+	    for (let i = 1; i <= maxPage; i++) {
+	        options += `<option value="${i}" ${i === currentPage ? 'selected' : ''}>${i}</option>`;
+	    }
+	    pageJump.innerHTML = options;
+	}
+	// 改變每頁顯示筆數
+    function syncPageUrl(page) {
+        try {
+            const url = new URL(location.href);
+            if (page && page > 1) url.searchParams.set('page', page);
+            else url.searchParams.delete('page');
+            history.replaceState(null, '', url.toString());
+        } catch (e) {}
+    }
+
+	window.changePageSize = () => { pageSize = parseInt(document.getElementById('pageSize').value); currentPage = 1; render(); syncPageUrl(1); };
+	
+	// 跳至特定頁數
+	window.jumpToPage = () => { currentPage = parseInt(document.getElementById('pageJump').value); render(); syncPageUrl(currentPage); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    window.prevPage = () => { if(currentPage > 1) { currentPage--; render(); syncPageUrl(currentPage); window.scrollTo({ top: 0, behavior: 'smooth' }); } };
+    window.nextPage = () => { if(currentPage * pageSize < allFAQs.length) { currentPage++; render(); syncPageUrl(currentPage); window.scrollTo({ top: 0, behavior: 'smooth' }); } };
+
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+
+<script type="module" src="/Javascript/global.js?v=20261011"></script>
+<script src="../Javascript/cloud.js?v=20261012"></script>
+
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>諮詢表單 | 鬼磕頭</title>
+<link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+<style>
+  body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #f8f9fa; padding: 20px; margin: 0; display: flex; justify-content: center; }
+  .card { background: linear-gradient(135deg, #f7ebd7 0%, #e6d3af 100%); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; border-radius: 12px; padding: 25px; width: 100%; max-width: 520px; color: #3e2723; }
+  h2 { color: #4a2e1b; margin-top: 0; }
+  label { display: block; font-weight: bold; color: #4a2e1b; margin: 12px 0 4px; }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid #dcbfa2; border-radius: 6px; box-sizing: border-box; font-family: inherit; background: #fff; }
+  textarea { min-height: 120px; }
+  button { width: 100%; padding: 12px; background: #8b7355; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 16px; font-family: inherit; }
+  button:disabled { opacity: .6; }
+  .hint { font-size: 12px; color: #8b7355; margin-top: 4px; }
+  .contact-box { border: 1px dashed #8b7355; border-radius: 8px; padding: 4px 14px 14px; margin-top: 12px; }
+  .contact-title { font-weight: bold; color: #4a2e1b; margin: 10px 0 4px; }
+  .contact-box label { margin-top: 8px; }
+  #f_copy { width: auto; }
+  #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; justify-content: center; align-items: center; }
+  #modal.open { display: flex; }
+  #modalBox { background: #fffdf8; border: 1px solid #dcbfa2; border-radius: 12px; padding: 24px; width: 90%; max-width: 360px; text-align: center; }
+  #status { margin-top: 12px; font-weight: bold; font-size: 14px; white-space: pre-line; text-align: center; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  /* 以下選單與返回鈕樣式與全站 global.css 完全一致 */
+  .expandable-menu-container {
+      position: fixed;
+      bottom: 150px;
+      right: 15px;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+  }
+  .floating-service-btn {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: #1c1e21;
+      color: #ffffff;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #ffc107;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 0;
+  }
+  #serviceIcon { display: block; margin: 0 !important; padding: 0 !important; font-size: 100%; line-height: 1; }
+  .floating-service-btn:hover { transform: scale(1.1); background: #000; }
+  #serviceText { display: none; }
+  .menu-content {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: rgba(28, 30, 33, 0.95);
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #ffc107;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      min-width: 130px;
+  }
+  .expandable-menu-container.show-menu .menu-content { display: flex; }
+  .menu-item { color: white; text-decoration: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; }
+  .menu-item:hover { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+  .back-home {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: rgba(28, 30, 33, 0.95);
+      border: 1px solid #ffc107;
+      color: #ffc107;
+      height: 36px;
+      padding: 0px 16px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-sizing: border-box;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1;
+  }
+  .back-home:hover { transform: scale(1.05); background: #000000; color: #ffc107; }
+
+  /* ===== 送出成功後的 LINE 推廣區塊 ===== */
+  .line-promo { margin-top: 18px; border: 1px solid #dcbfa2; border-radius: 10px; background: #fffdf8; padding: 16px; text-align: center; }
+  .line-promo[hidden] { display: none; }
+  .lp-title { font-weight: bold; color: #4a2e1b; font-size: 16px; margin-bottom: 6px; }
+  .lp-text { font-size: 13px; color: #5c4332; margin: 0 0 12px; line-height: 1.6; }
+  .lp-btn { display: block; padding: 11px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 15px; margin-bottom: 8px; background: #06c755; color: #fff; }
+  .lp-btn-gold { background: #8b7355; }
+  .lp-btn:active { opacity: .85; }
+  .lp-note { font-size: 12px; color: #8b7355; margin: 2px 0 12px; line-height: 1.5; }
+  .lp-qrwrap { margin-top: 6px; }
+  .lp-qr { display: inline-block; padding: 8px; background: #fff; border: 1px solid #eee; border-radius: 6px; }
+  .lp-qr[hidden] { display: none; }
+  .lp-qr img, .lp-qr canvas { width: 160px; height: 160px; display: block; }
+  .lp-qrnote { font-size: 12px; color: #999; margin-top: 6px; }
+  .lp-warn { margin-top: 8px; font-size: 12px; color: #b04a3a; font-weight: bold; }
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="expandable-menu-container" id="menuContainer">
+  <div class="menu-content" id="menuContent"></div>
+  <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()" aria-label="選單">
+    <span id="serviceIcon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </span>
+    <span id="serviceText">選單</span>
+  </button>
+</div>
+<div class="card">
+  <div class="topbar">
+    <a href="./index.html" class="back-home">&#x2190;&#xFE0E; 返回首頁</a>
+  </div>
+  <h2>📿 諮詢表單</h2>
+  <label>姓名 / 稱呼 *</label>
+  <input id="f_name" placeholder="怎麼稱呼您">
+  <div class="contact-box">
+    <div class="contact-title">聯絡方式（選填，擇一填寫即可）</div>
+    <label>E-mail</label>
+    <input id="f_email" type="email" placeholder="example@mail.com">
+    <label>電話號碼</label>
+    <input id="f_phone" placeholder="09xx-xxx-xxx">
+    <label>LINE ID</label>
+    <input id="f_line" placeholder="Line ID">
+  </div>
+  <label>諮詢項目 *</label>
+  <select id="f_cat">
+    <option value="">請選擇</option>
+    <option>靈異事件處置</option>
+    <option>陽宅陰宅勘查</option>
+    <option>改運招財求緣</option>
+    <option>靈學諮詢傳法</option>
+    <option>其他</option>
+  </select>
+  <label>問題內容 *</label>
+  <textarea id="f_msg" placeholder="請描述您遇到的狀況"></textarea>
+  <label style="font-weight:normal;font-size:14px;">
+    <input type="checkbox" id="f_copy" style="width:auto;"> 將案件副本寄到我的信箱
+  </label>
+  <button id="sendBtn" onclick="onSubmit()">送出</button>
+  <div id="status"></div>
+
+  <div id="linePromo" class="line-promo" hidden>
+    <div class="lp-title">📱 加入官方 LINE，隨時查案件進度</div>
+    <p class="lp-text">綁定後在 LINE 輸入「<b>我的案件</b>」就能查詢處理進度。</p>
+    <a class="lp-btn" href="https://lin.ee/Rw7jBiH" target="_blank" rel="noopener">① 加入官方 LINE 好友</a>
+    <a class="lp-btn lp-btn-gold" id="bindBtn" href="#" target="_blank" rel="noopener">② 一鍵綁定此案件</a>
+    <p class="lp-note">② 請先完成①。<br>點擊後會開啟 LINE，綁定訊息已幫您打好，按送出即完成。</p>
+    <div class="lp-qrwrap">
+      <div id="bindQr" class="lp-qr"></div>
+      <div id="qrFallback" class="lp-qr" hidden><img src="/pic/Line@.jpg" alt="LINE QR Code"></div>
+      <div class="lp-qrnote" id="qrNote">手機掃描 QR → 自動帶入綁定訊息</div>
+      <div class="lp-warn">⚠️ 此 QR 含您的案件資訊，請勿分享給他人</div>
+    </div>
+  </div>
+</div>
+
+<div id="modal"><div id="modalBox">
+  <h3>📧 信箱驗證</h3>
+  <p style="font-size:14px;">驗證碼已寄到您的信箱，10 分鐘內有效。</p>
+  <input id="otp" placeholder="6 位數驗證碼" maxlength="6" style="text-align:center;font-size:20px;letter-spacing:4px;">
+  <button onclick="onOtpConfirm()">確認送出</button>
+  <button onclick="closeModal()" style="background:#fff;color:#8b7355;border:1px solid #8b7355;">取消</button>
+</div></div>
+
+<script type="module">
+import { getIni, initMenu } from '/Javascript/global.js';
+
+// 設定全部來自 global.ini（CONSULT_API_URL、RECAPTCHA_SITE_KEY）
+let GAS_URL = '';
+let RECAPTCHA_SITE = '';
+let ready = false;
+
+async function initConfig() {
+  say('載入設定中...', 'blue');
+  try {
+    const cfg = await getIni('/settings/global.ini');
+    if (cfg.MENU_DATA) initMenu(cfg.MENU_DATA);
+    const raw = (cfg.CONSULT_API_URL || '').trim();
+    GAS_URL = raw.startsWith('http') ? raw : (raw ? atob(raw) : '');
+    RECAPTCHA_SITE = (cfg.RECAPTCHA_SITE_KEY || '').trim();
+    if (!GAS_URL) throw new Error('INI 尚未設定 CONSULT_API_URL');
+    if (!RECAPTCHA_SITE) throw new Error('INI 尚未設定 RECAPTCHA_SITE_KEY');
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.google.com/recaptcha/api.js?render=' + RECAPTCHA_SITE;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('reCAPTCHA 載入失敗'));
+      document.head.appendChild(s);
+    });
+    ready = true;
+    say('');
+  } catch (e) {
+    say('設定載入失敗：' + e.message, 'red');
+  }
+}
+
+function say(m, c) {
+  const s = document.getElementById('status');
+  s.innerText = m; s.style.color = c || '#4a2e1b';
+}
+function val(id) { return document.getElementById(id).value.trim(); }
+
+async function onSubmit() {
+  if (!ready) return say('設定載入中，請稍候再按', 'orange');
+  const name = val('f_name'), email = val('f_email'), phone = val('f_phone'),
+        line = val('f_line'), cat = val('f_cat'), msg = val('f_msg');
+  if (!name) return say('請填寫姓名', 'red');
+  if (!email && !phone && !line) return say('E-mail／電話／LINE ID 至少填一項', 'red');
+  if (!cat) return say('請選擇諮詢項目', 'red');
+  if (!msg) return say('請填寫問題說明', 'red');
+  const wantCopy = document.getElementById('f_copy').checked;
+  if (wantCopy && !email) return say('勾選寄副本請先填寫 E-mail', 'red');
+  say('驗證中...', 'blue');
+  try {
+    if (email) {
+      const token = await grecaptcha.execute(RECAPTCHA_SITE, { action: 'submit' });
+      const r = await callApi('sendOtp', { email, recaptcha: token });
+      if (!r.success) return say('驗證碼發送失敗：' + r.message, 'red');
+      document.getElementById('modal').classList.add('open');
+      say('');
+    } else {
+      const token = await grecaptcha.execute(RECAPTCHA_SITE, { action: 'submit' });
+      await doSubmit({ recaptcha: token, otp: '' });
+    }
+  } catch (e) { say('連線失敗：' + e.message, 'red'); }
+}
+
+async function onOtpConfirm() {
+  const code = val('otp');
+  if (!code) return;
+  const token = await grecaptcha.execute(RECAPTCHA_SITE, { action: 'submit' });
+  await doSubmit({ recaptcha: token, otp: code });
+  closeModal();
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+// ===== LINE 推廣／一鍵綁定 =====
+// 官方帳號 Basic ID（由 https://lin.ee/Rw7jBiH 轉址取得）
+const LINE_BASIC_ID = '@625srjek';
+
+// LINE 無法代客送出訊息，但可以用 oaMessage 深連結「先打好字」，
+// 使用者開啟後按一次送出即完成綁定。
+function bindDeepLink(caseId, name) {
+  const text = '綁定 ' + caseId + ' ' + (name || '');
+  return 'https://line.me/R/oaMessage/' + LINE_BASIC_ID + '/?' + encodeURIComponent(text.trim());
+}
+
+function showLinePromo(caseId, name) {
+  const box = document.getElementById('linePromo');
+  if (!box || !caseId) return;
+  const url = bindDeepLink(caseId, name);
+  const btn = document.getElementById('bindBtn');
+  btn.href = url;
+
+  const qrBox = document.getElementById('bindQr');
+  const fb = document.getElementById('qrFallback');
+  const note = document.getElementById('qrNote');
+  qrBox.innerHTML = '';
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(qrBox, { text: url, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+    fb.hidden = true;
+    if (note) note.textContent = '手機掃描 QR → 自動帶入綁定訊息';
+  } else {
+    fb.hidden = false;
+    if (note) note.textContent = '掃描加入好友後，回傳：綁定 ' + caseId + ' ' + (name || '');
+  }
+  box.hidden = false;
+  try { box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+}
+
+async function doSubmit(extra) {
+  say('送出中...', 'blue');
+  try {
+    const r = await callApi('submit', {
+      name: val('f_name'), email: val('f_email'), phone: val('f_phone'),
+      line_id: val('f_line'), category: val('f_cat'), message: val('f_msg'),
+      recaptcha: extra.recaptcha, otp: extra.otp || '',
+      copy: document.getElementById('f_copy').checked
+    });
+    if (r.success) {
+      say('✅ 已收到！案件編號：' + r.caseId + '\n我們會盡快與您聯繫。', 'green');
+      document.getElementById('sendBtn').disabled = true;
+      showLinePromo(r.caseId, val('f_name'));
+    } else {
+      say('送出失敗：' + r.message, 'red');
+    }
+  } catch (e) { say('連線失敗：' + e.message, 'red'); }
+}
+
+async function callApi(action, data) {
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action, ...data })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+// inline onclick 用的是全域函式，掛上去（module 內建函式預設不外露）
+window.onSubmit = onSubmit;
+window.onOtpConfirm = onOtpConfirm;
+window.closeModal = closeModal;
+window.showLinePromo = showLinePromo; // 供測試／除錯用
+
+// 第一次填上 email 自動勾一次；手動動過之後不再干涉，全部自己決定
+let copyTouched = false;
+document.getElementById('f_copy').addEventListener('change', () => { copyTouched = true; });
+document.getElementById('f_email').addEventListener('input', (e) => {
+  const box = document.getElementById('f_copy');
+  if (!!e.target.value.trim() && !copyTouched && !box.checked) {
+    box.checked = true; // 僅限第一次自動勾
+  }
+});
+
+initConfig();
+</script>
+</body>
+</html>

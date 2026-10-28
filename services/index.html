@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 1. 基本搜尋引擎設定 (解決「顯示 GitHub 文件」的關鍵) -->
+    <title>鬼磕頭 | 靈異紀實．專業靈學服務</title>
+    <meta name="description" content="分享我所看到與遇上的靈界故事。同時，也為有心改變的人，竭誠服務。">
+
+    <!-- 2. 網站圖示 (使用您提供的 .ico 絕對路徑，確保 Google 能抓到) -->
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+	<link rel="canonical" href="https://spiritref.github.io/services/" />
+    <!-- 行動裝置捷徑圖示 -->
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+
+    <!-- 3. CSS 連結 (保持原樣) -->
+	<link rel="stylesheet" href="https://spiritref.github.io/CSS/global.css">
+    <link rel="stylesheet" href="CSS/Services.css?v=20261012c">
+    <link rel="stylesheet" href="CSS/cloud.css?v=20261011">
+    <style>
+        /* 首頁內容框：淺灰半透明＋黑字（公告板、卡片維持原樣） */
+        .container { background: rgba(216, 213, 208, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #222222; border-radius: 16px; }
+        .container h2 { color: #111111; }
+        .container .intro-text { color: #111111; }
+        .container .notice-board { color: #3e2723; }
+        .container .notice-board h2 { color: #1a1a1a; }
+        .container #contact { border-top-color: rgba(0, 0, 0, 0.2) !important; }
+        .container #contact a { color: #8b7355; }
+        body { background: #f8f9fa; }
+        .container { max-width: 1050px; }
+        
+        /* 卡片樣式 */
+        .card { background: linear-gradient(135deg, rgba(247,235,215,0.68) 0%, rgba(230,211,175,0.68) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; color: #3e2723; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: box-shadow 0.3s, transform 0.3s; }
+        .card:hover { box-shadow: 0 6px 16px rgba(139, 115, 85, 0.15); transform: translateY(-2px); }
+        .card h3 { color: #4a2e1b; border-bottom: 2px solid #8b7355; }
+        .card p { color: #5c4332; }
+        
+        /* 按鈕 */
+        .btn { background: #8b7355; color: #ffffff; }
+        .btn:hover { background: #6d5a3e; }
+    </style>
+
+    <!-- 4. Facebook / LINE 分享預覽設定 -->
+    <meta property="og:title" content="鬼磕頭 | 靈異紀實．專業靈學服務">
+    <meta property="og:description" content="分享我所看到與遇上的靈界故事。同時，也為有心改變的人，竭誠服務。">
+    <meta property="og:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:url" content="https://spiritref.github.io/services/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="鬼磕頭">
+
+    <!-- 5. Twitter 分享設定 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="鬼磕頭">
+    <meta name="twitter:description" content="靈異紀實與專業靈學服務">
+    <meta name="twitter:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+</head>
+<body class="cloud-bg">
+<div id="cloud-container"></div>
+
+<header>
+	<div class="logo">
+		<a href="index.html" style="text-decoration: none;">
+		    <img src="https://spiritref.github.io/LogoStamp.png" alt="鬼磕頭印章" style="height: 35px; vertical-align: middle; margin-right: 5px;">
+		    <img src="https://spiritref.github.io/GhostKowtowWord.png" alt="鬼磕頭" style="height: 30px; vertical-align: middle;">
+		</a>
+	</div>
+	
+	<nav>
+		<a href="#services">專業服務</a>
+		<a href="#faq-section">超自然現象彙典</a>
+		<a href="#visual-records">視覺紀錄</a>
+		<a href="../ghoststory/">靈異日誌</a>
+		<a href="#contact">聯絡方式</a>
+	</nav>
+</header>
+	
+<div class="expandable-menu-container" id="menuContainer">
+    <div class="menu-content" id="menuContent"></div>
+    <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+        <span id="serviceIcon">
+	        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	            <line x1="3" y1="12" x2="21" y2="12"></line>
+	            <line x1="3" y1="6" x2="21" y2="6"></line>
+	            <line x1="3" y1="18" x2="21" y2="18"></line>
+	        </svg>
+	    </span>
+        <span id="serviceText">選單</span>
+    </button>
+</div>
+	
+<div class="container">
+	<!-- 1. 個人簡介 -->
+	<section class="intro-section">
+		<p class="intro-text">我是鬼磕頭。
+在此，分享我所看到與遇上的
+靈界故事。
+同時，也為有心改變的人，竭誠服務。</p>
+	</section>
+	
+	<!-- 2. 公告區 -->
+	<section class="notice-board">
+		<div class="notice-header">
+			<h2>最新公告</h2>
+			<a href="./notices/" class="more-link">查看全部 ➔</a>
+		</div>
+		<div id="announcement-content">正在獲取最新公告...</div>
+	</section>
+
+	<!-- 3. 專業服務 -->
+	<section id="services">
+		<h2 style="text-align: center; margin-bottom: 30px;">專業服務</h2>
+		<div class="services" id="services-container">
+			<div class="card">
+				<h3>靈異事件處置與生活恢復服務</h3>
+				<p>若您或親友正遭遇鬼壓床、重複噩夢、夜半盜汗、莫名暴瘦、聽聞怪聲或撞見異象等疑似非自然力量的干擾。<br>我們提供專業鑑定與處置建議，協助您排除詭異症狀的困擾、化解未知恐懼，讓身心狀態重新回歸正軌，找回久違的平靜生活。</p>
+			</div>
+			<div class="card">
+				<h3>陽宅與陰宅場域審視勘查<br>（看房／選址）</h3>
+				<p>無論是居家租屋、置產買房、辦公辦或營業場所選址，墓地及祭祀場所等各種空間場域，我們提供全方位的審視與判斷。<br>在您購屋或投入利用前後，協助避開凶煞並優化居住及使用效果。<br>透過專業的地理與氣場勘查，提供最切實的配置建議，確保環境安定、磁場和諧，為您打造安居樂業的空間場域。</p>
+			</div>
+			<div class="card">
+				<h3>改運、招財與求緣規劃<br>（秘法求財）</h3>
+				<p>針對想為未來積極規劃的您，我們結合個人願望和明確神靈學引導，以達改善命運、調整未來與求得善姻緣的全面協助。<br>服務核心更包含「秘法求財」，為您排除阻礙財運的潛在因素、增加業務機會並提升財運，有效優化事業運勢，協助您開啟財富流動的契機，全面翻轉運勢、迎向理想生活。</p>
+			</div>
+			<div class="card">
+				<h3>靈學諮詢與法術傳授<br>（有形法／無形法）</h3>
+				<p>針對您長期的困惑、難以解釋的靈異感知或夢境啟示提供深度溝通與引導，協助您尋找問題根源並給予調整建議。<br>此外，我們更進一步傳授「有形法」與「無形法」，旨在引領有心學習之人建立正確的靈學觀念。<br>從釐清個人的靈異感知開始，逐步融會貫通核心法門，讓您在解決自身困惑後，日後亦能具備行法助人的能力。</p>
+			</div>
+		</div>
+	</section>
+	
+	<!-- 💡 新增 4. 超自然現象彙典區塊 -->
+	<section id="faq-section" class="notice-board" style="margin-top: 40px;">
+		<h2 style="text-align: center; margin-bottom: 30px;">超自然現象彙典</h2>
+		<div id="faq-content">正在獲取超自然現象...</div>
+		<div style="text-align: center; margin-top: 20px;">
+			<a href="./faq/" target="_blank" class="btn" id="all-faq-btn">查看全部 ➔</a>
+	    </div>
+	</section>
+	
+	<section id="visual-records">
+	    <h2 style="text-align: center; margin-bottom: 30px;">視覺紀錄</h2>
+	    
+	    <div class="services" id="visual-records-container">
+	        <p style="text-align: center; grid-column: 1/-1;">影像資料加載中...</p>
+	    </div>
+	
+	    <div style="text-align: center; margin-top: 20px;">
+			<a href="https://www.youtube.com/@bodhicolor" target="_blank" class="btn" id="all-visuals-btn">顯示YouTube 頻道影片 ➔</a>
+	        <!-- <a href="./visual-records/" target="_blank" class="btn" id="all-visuals-btn" style="display: none;">顯示所有視覺紀錄</a> -->
+	    </div>
+	</section>
+	
+	<!-- 5. 小說庫跳轉區 (原本的 4) -->
+	<section style="text-align: center; padding: 60px 0;">
+		<h2>靈異日誌紀實</h2>
+		<p>走進鬼磕頭的文字世界，體驗最真實的驚悚感。</p>
+		<!--<button onclick="goToNovelWithEffect()" class="btn" style="border:none; cursor:pointer;">點此進入閱讀</button> -->
+		<div style="position:relative; width:100%; max-width:520px; margin:24px auto 0;">
+			<a href="../ghoststory/"><img src="../pic/ghoststoryEntry.jpeg" alt="靈異日誌紀實" style="display:block; width:100%; height:auto; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.12);"></a>
+			<a href="../ghoststory/" class="btn" style="position:absolute; left:50%; bottom:28px; transform:translateX(-50%); margin:0; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,0.35);">進入閱讀</a>
+		</div>
+	</section>
+	<div id="door-overlay" style="visibility: hidden; opacity: 0;">
+	    <div id="stage">
+	        <div class="door-container" id="mainDoor">
+	            <div class="door-panel left-door"><div class="ear"></div></div>
+	            <div class="door-panel right-door"><div class="ear"></div></div>
+	            <div class="bolt-system">
+	                <div class="bolt bolt-top"></div>
+	                <div class="bolt bolt-bottom"></div>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+
+	<!-- 6. 聯絡資訊 -->
+	<section id="contact" style="border-top: 1px solid #eee; padding-top: 40px;">
+		<h2>聯絡方式</h2>
+		<ul>
+			<li>我有問題：<a href="./consult.html">諮詢表單</a></li>
+			<li>Facebook 粉絲專頁：<a href="https://www.facebook.com/p/%E9%AC%BC%E7%A3%95%E9%A0%AD-100063596994961/" target="_blank">鬼磕頭</a></li>
+			<li>官方信箱：bodhicolor@gmail.com</li>
+			<li>官方 Line：<a href="https://lin.ee/Rw7jBiH" target="_blank"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" height="36" border="0" style="vertical-align: middle;"></a></li>
+			<li>LINE QR Code：<br><img src="../pic/Line@.jpg" alt="LINE QR Code" style="width: 140px; height: 140px; margin-top: 8px; border: 1px solid #eee; border-radius: 6px; object-fit: contain; background: #fff;"></li>
+		</ul>
+	</section>
+</div>
+
+<footer>
+	<p>&copy; 2026 鬼磕頭. All Rights Reserved.</p>
+</footer>
+<script type="module" src="Javascript/Services.js?v=20261023a"></script>
+<script src="Javascript/cloud.js?v=20261012"></script>
+<script type="module" src="https://spiritref.github.io/Javascript/global.js"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PSE2H8VSBQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-PSE2H8VSBQ');
+</script>
+<script>
+	function goToNovelWithEffect() {
+	    const overlay = document.getElementById('door-overlay');
+	    
+	    // 1. 顯示大門遮罩 (此時門是關著且閂好的)
+	    overlay.style.visibility = 'visible';
+	    overlay.style.opacity = '1';
+	
+	    // 2. 延遲一下，開始拔除門閂
+	    setTimeout(() => {
+	        overlay.classList.add('is-unlocking');
+	    }, 1000);
+	
+	    // 3. 門閂開了，大門向內推開
+	    setTimeout(() => {
+	        overlay.classList.add('is-open');
+	    }, 2200);
+	
+	    // 4. 完全推開並進入迷霧後，跳轉頁面
+	    setTimeout(() => {
+	        window.location.href = "../ghoststory/";
+	    }, 4500);
+	}
+</script>
+</body>
+</html>

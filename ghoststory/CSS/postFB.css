@@ -1,0 +1,237 @@
+/* ==========================================================================
+   1. 基礎佈局與變數
+   ========================================================================== */
+body { 
+    font-family: -apple-system, system-ui, "Microsoft JhengHei", sans-serif; 
+    background: #f0f2f5; 
+    margin: 0; 
+    /* 增加底部 padding 確保內容不被 Dock 擋住 */
+    padding: 10px 10px 180px 10px; 
+    -webkit-tap-highlight-color: transparent;
+} 
+
+.container { width: 100%; max-width: 600px; margin: 0 auto; }
+h1 { font-size: 1.2rem; margin: 10px 0; color: #1c1e21; text-align: center; }
+
+/* ==========================================================================
+   2. 導航選單 (懸浮按鈕 + 動態選單)
+   ========================================================================== */
+.expandable-menu-container {
+    position: fixed;
+    bottom: 150px; /* 提高一點避開底部導航 */
+    right: 15px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.floating-service-btn {
+    background: #1c1e21;
+    color: #ffffff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ffc107;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.floating-service-btn:hover { transform: scale(1.1); background: #000; }
+#serviceText { display: none; }
+
+.menu-content {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: rgba(28, 30, 33, 0.95);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #ffc107;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    min-width: 130px;
+}
+
+.expandable-menu-container.show-menu .menu-content {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.menu-item {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+}
+.menu-item:hover { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+
+/* ==========================================================================
+   3. 搜尋列、過濾器與載入狀態
+   ========================================================================== */
+.search-group { display: flex; gap: 8px; margin-bottom: 10px; }
+.search-bar { 
+    width: 100%; padding: 12px 15px; font-size: 16px; border-radius: 20px; 
+    border: 1px solid #ddd; box-sizing: border-box; outline: none; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; background: #fff;
+}
+.search-group .search-bar { flex: 1; margin-bottom: 0; }
+
+.filter-fav-btn { 
+    padding: 0 15px; font-size: 14px; border-radius: 20px; border: 1px solid #ddd; 
+    background: white; color: #65676b; cursor: pointer; transition: all 0.3s; 
+    height: 46px; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.filter-fav-btn.active { background: #ffc107; border-color: #ffc107; color: #000; font-weight: bold; }
+
+#titleFilter { 
+    padding-right: 40px !important; border-right: 20px solid transparent !important; 
+    margin-right: -35px !important; appearance: menulist;
+}
+
+/* ==========================================================================
+   4. 文章卡片樣式
+   ========================================================================== */
+.post-card { 
+    background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; position: relative; 
+}
+.fav-btn { 
+    position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 1.5em; 
+    color: #ccc; transition: all 0.2s; z-index: 10; 
+}
+.fav-btn.active { color: #ffc107; transform: scale(1.1); }
+
+.post-date { color: #65676b; font-size: 0.8em; }
+.post-title { font-weight: bold; font-size: 1.1em; margin: 5px 0; color: #1c1e21; padding-right: 35px; }
+.post-content { 
+    color: #444; font-size: 16px; line-height: 1.8; overflow: hidden; 
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-bottom: 10px; 
+}
+
+.thumb-img-container { 
+    display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; 
+    padding-bottom: 5px; width: 100%; 
+}
+.thumb-img { 
+    width: 80px !important; height: 80px !important; object-fit: cover; 
+    border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; 
+}
+
+/* ==========================================================================
+   5. 底部固定控制欄 (Dock) 與 跳頁功能 (優化版)
+   ========================================================================= */
+.bottom-dock { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    background: #ffffff; 
+    border-top: 1px solid #ddd; 
+    /* 核心修改：增加下方的安全間距，確保不碰到螢幕邊緣 */
+    padding: 15px 0 calc(15px + env(safe-area-inset-bottom)); 
+    z-index: 2000; 
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.08); 
+}
+
+.dock-container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+
+.control-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+.control-select { 
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; 
+    background: #f9f9f9; font-size: 13px; cursor: pointer; 
+}
+
+.pagination { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    gap: 15px; /* 增加元件間距 */
+}
+
+.page-btn { 
+    background: #1877f2; 
+    color: white; 
+    border: none; 
+    padding: 10px 12px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    font-size: 14px; 
+    /* 修改：不強制佔滿，改為彈性固定寬度 */
+    flex: 0 1 100px; 
+    text-align: center;
+}
+
+.page-btn:disabled { background: #e4e6eb; color: #bcc0c4; cursor: not-allowed; }
+
+.page-info-group { 
+    flex: 1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 13px; 
+    font-weight: bold; 
+    color: #4b4f56; 
+    white-space: nowrap;
+}
+
+.jump-select { 
+    border: 1px solid #ccc; 
+    background: #fff; 
+    padding: 4px 8px; 
+    border-radius: 6px; 
+    color: #1877f2; 
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   6. 獨立文章頁樣式 (article.html)
+   ========================================================================== */
+.article-container { 
+    background: #fff; padding: 20px; border-radius: 8px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 100px; 
+}
+.full-img { width: 100%; max-width: 100%; display: block; margin: 15px auto; border-radius: 8px; }
+.full-content { font-size: 1.15em; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; color: #333; }
+.back-btn-top { display: inline-block; margin-bottom: 15px; color: #888; text-decoration: none; font-size: 0.9em; }
+
+/* ==========================================================================
+   7. 頁尾
+   ========================================================================== */
+footer {
+    padding: 20px 20px 30px 20px; text-align: center; 
+    background-color: transparent; color: #999; font-size: 0.75rem; line-height: 1.4;
+}
+footer p { margin: 2px 0; }
+footer p:last-child { font-size: 0.7rem; opacity: 0.6; }
+
+/* ==========================================================================
+   8. 📱 手機 RWD 優化
+   ========================================================================== */
+@media (max-width: 480px) {
+    body { padding-bottom: 200px; }
+    .search-group { flex-direction: column; gap: 10px; }
+    .filter-fav-btn { width: 100%; height: 48px; }
+    .search-bar { margin-bottom: 10px; }
+    
+    .pagination { gap: 10px; }
+    .page-btn { flex: 0 1 85px; padding: 12px 5px; font-size: 13px; }
+    .page-info-group { font-size: 11px; gap: 4px; }
+    .jump-select { padding: 4px 6px; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

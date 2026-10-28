@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鬼磕頭日誌 | 靈界紀實</title>
+    <meta name="description" content="穿梭陰陽，紀錄最真實的靈界對話。收錄鬼磕頭紀實、靈異故事與真實案例。">
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:title" content="鬼磕頭日誌 | 靈界紀實">
+    <meta property="og:description" content="穿梭陰陽，紀錄最真實的靈界對話。">
+    <meta property="og:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+    <meta property="og:url" content="https://spiritref.github.io/ghoststory/">
+    <meta property="og:type" content="website">
+	<meta property="og:site_name" content="鬼磕頭日誌 | 靈界紀實">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="鬼磕頭日誌 | 靈界紀實">
+    <meta name="twitter:description" content="穿梭陰陽，紀錄最真實的靈界對話。">
+    <meta name="twitter:image" content="https://spiritref.github.io/GhostKowtow.jpg">
+    <link rel="stylesheet" href="CSS/postFB.css?v=20261011">
+    <style>
+        /* 牛皮紙質感古典風格 */
+        body { background: #f8f9fa; }
+        .container { max-width: 850px; }
+        h1 { text-align: center; color: #1a1a1a; font-size: 2.2em; font-weight: 900; letter-spacing: 2px; }
+        
+        /* 牛皮紙質感卡片 */
+        .post-card { background: linear-gradient(135deg, #f7ebd7 0%, #e6d3af 100%); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; color: #3e2723; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: box-shadow 0.3s, transform 0.3s; }
+        .post-card:hover { box-shadow: 0 6px 16px rgba(139, 115, 85, 0.15); transform: translateY(-2px); }
+        .post-date { color: #4a2e1b; }
+        .post-title { color: #4a2e1b; }
+        .post-content { color: #5c4332; }
+        
+        /* 底部控制欄 */
+        .bottom-dock { background: #ffffff; border-top: 1px solid #eaeaea; }
+        .control-select { background: #ffffff; color: #333333; border: 1px solid #cccccc; }
+        .page-btn { background: #ffffff; color: #333333; border: 1px solid #cccccc; }
+        .page-btn:hover:not(:disabled) { background: #faf6f0; border-color: #8b7355; color: #8b7355; }
+        .page-btn:disabled { background: #f9f9f9; color: #aaaaaa; border-color: #eeeeee; }
+        .jump-select { background: #ffffff; color: #333333; border: 1px solid #cccccc; }
+    </style>
+</head>
+<body>
+
+<div class="expandable-menu-container" id="menuContainer">
+    <div class="menu-content" id="menuContent"></div>
+    <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+        <span id="serviceIcon">
+	        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	            <line x1="3" y1="12" x2="21" y2="12"></line>
+	            <line x1="3" y1="6" x2="21" y2="6"></line>
+	            <line x1="3" y1="18" x2="21" y2="18"></line>
+	        </svg>
+	    </span>
+        <span id="serviceText">選單</span>
+    </button>
+</div>
+
+<div class="container">
+    <h1>📖 鬼磕頭紀實</h1>
+    <p style="text-align: center;">—— 穿梭陰陽，紀錄最真實的靈界對話 ——</p>
+    
+    <div class="search-group">
+        <input type="text" id="search" class="search-bar" placeholder="🔍 搜尋內容..." oninput="currentPage=1; updateDisplay(); syncPageUrl(1);">
+        <button id="favToggle" class="filter-fav-btn" onclick="toggleFavFilter()">⭐ 收藏</button>
+    </div>
+
+    <select id="titleFilter" class="search-bar title-select" style="margin-top: -5px; background-color: #fff;" onchange="currentPage=1; updateDisplay(); syncPageUrl(1);">
+        <option value="">📌 所有主題標題</option>
+    </select>
+
+    <div id="post-list">
+        <p style="text-align:center; padding:50px; color:#888;">正在載入資料...</p>
+    </div>
+</div>
+
+<div class="bottom-dock">
+    <div class="dock-container">
+        <div class="control-row">
+            <select id="sortOrder" class="control-select" onchange="updateDisplay()">
+                <option value="desc">最新更新 (倒序)</option>
+                <option value="asc">從頭開始 (順序)</option>
+            </select>
+            <select id="pageSize" class="control-select" onchange="currentPage=1; updateDisplay(); syncPageUrl(1);">
+                <option value="5">每頁 5 筆</option>
+                <option value="10">每頁 10 筆</option>
+                <option value="20" selected>每頁 20 筆</option>
+                <option value="50">每頁 50 筆</option>
+                <option value="100">每頁 100 筆</option>
+                <option value="all">顯示全部</option>
+            </select>
+        </div>
+        
+        <div class="pagination">
+            <button onclick="changePage(-1)" id="prevBtn" class="page-btn">上一頁</button>
+            
+            <div class="page-info-group" style="display: flex; align-items: center; gap: 5px;">
+                <span>第</span>
+                <select id="pageJump" class="jump-select" style="padding: 2px 5px; border-radius: 4px;" onchange="jumpToPage()">
+                    <option value="1">1</option>
+                </select>
+                <span id="pageNum" class="page-num-display">/ 1 頁</span>
+            </div>
+            
+            <button onclick="changePage(1)" id="nextBtn" class="page-btn">下一頁</button>
+        </div>
+    </div>
+</div>
+<div id="postModal" style="display:none;">
+    <div id="modal-header-title"></div>
+    <div id="modal-images"></div>
+    <div id="modal-body"></div>
+</div>
+
+<footer>
+    <p>&copy; 2026 鬼磕頭日誌 | 靈界紀實. All Rights Reserved.</p>
+</footer>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PSE2H8VSBQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-PSE2H8VSBQ');
+</script>
+<script type="module" src="Javascript/postFB.js?v=20261011"></script>
+
+</body>
+</html>

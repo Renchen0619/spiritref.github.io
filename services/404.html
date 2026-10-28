@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, follow">
+    <title>迷失方向 - 鬼磕頭</title>
+
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #3e2723;
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 40px;
+            border: 1px solid #dcbfa2;
+            border-left: 5px solid #8b7355;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f7ebd7 0%, #e6d3af 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            max-width: 500px;
+        }
+        h1 { font-size: 2rem; letter-spacing: 4px; color: #4a2e1b; margin-top: 0; }
+        p { font-size: 1rem; color: #5c4332; margin: 20px 0; }
+        .countdown { color: #8b7355; font-weight: bold; }
+        .link { color: #8b7355; text-decoration: none; border-bottom: 1px solid #8b7355; font-weight: bold; }
+        .link:hover { color: #6d5a3e; border-bottom-color: #6d5a3e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>此路不通</h1>
+        <p>您似乎誤入了迷霧之中...<br>將在 <span id="timer" class="countdown">3</span> 秒後帶您回到人間。</p>
+        <p><a href="https://spiritref.github.io/services/" class="link">直接返回官網首頁</a></p>
+    </div>
+
+    <script>
+        let timeLeft = 3;
+        const timerElement = document.getElementById('timer');
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                // window.location.href = "https://spiritref.github.io/services/";
+                window.location.replace("https://spiritref.github.io/services/");
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

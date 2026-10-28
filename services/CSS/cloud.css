@@ -1,0 +1,53 @@
+/* 祥雲圖片背景（共用）：頁面 body 加 class="cloud-bg"，並放入 <div id="cloud-container"> */
+body.cloud-bg {
+    background: #ffffff;
+}
+
+body.cloud-bg .container,
+body.cloud-bg .list-container {
+    position: relative;
+    z-index: 1;
+}
+
+#cloud-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.cloud-item {
+    position: absolute;
+    animation: cloud-drift var(--duration) infinite linear;
+    will-change: transform;
+}
+
+.cloud-bob {
+    position: relative;
+    width: 100%;
+    animation: cloud-bob var(--bob-duration) infinite ease-in-out;
+}
+
+.cloud-bob img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+@keyframes cloud-drift {
+    from { transform: translateX(-350px); }
+    to { transform: translateX(calc(100vw + 350px)); }
+}
+
+@keyframes cloud-bob {
+    0%, 100% { transform: translateY(-10px); }
+    50% { transform: translateY(10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cloud-item, .cloud-bob { animation: none; }
+}

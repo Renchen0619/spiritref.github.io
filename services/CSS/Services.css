@@ -1,0 +1,274 @@
+:root {
+	--primary-color: #2c3e50; /* 專業深灰藍 */
+	--accent-color: #c0392b;  /* 神祕暗紅 */
+	--bg-color: #f7f7f7;
+	--text-color: #333;
+	--header-h: 70px;
+}
+body { 
+	font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
+	line-height: 1.6; 
+	color: var(--text-color); 
+	background-color: var(--bg-color);
+	margin: 0; 
+	padding: 0; 
+}
+html {
+    scroll-behavior: smooth; /* 增加平滑捲動效果 */
+    scroll-padding-top: var(--header-h, 80px); /* 這裡的數值請根據您 header 的實際高度調整 */
+}
+header { 
+	background: rgba(255, 255, 255, 0.85);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border-bottom: 1px solid #eee; 
+	padding: 1rem 5%; 
+	display: flex; 
+	justify-content: space-between; 
+	align-items: center; 
+	position: sticky; 
+	top: 0; 
+	z-index: 100; 
+}
+.logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; color: var(--primary-color); display: flex; align-items: center;}
+.logo img { height: 35px; margin-right: 10px; vertical-align: middle; }
+
+nav a { margin-left: 20px; text-decoration: none; color: var(--text-color); font-size: 0.9rem; }
+nav a:hover { color: var(--accent-color); }
+
+/* --- 公告區樣式優化 --- */
+.notice-board { background: #f9f9f9; border-left: 4px solid var(--accent-color); padding: 20px; margin-bottom: 40px; }
+.notice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.notice-header h2 { margin: 0; font-size: 1.2rem; }
+#contact h2 {
+    font-size: 1.1rem; /* 稍微縮小標題，減少壓迫感 */
+    margin-bottom: 10px;
+}
+
+/* 縮減公告間距：移除原本底部的 margin，改用微小的 padding */
+.notice-item { 
+	margin-bottom: 8px; 
+	border-bottom: 1px solid #eef2f3; 
+	padding-bottom: 6px; 
+	white-space: pre-line; 
+	font-size: 0.95rem;
+}
+.notice-item:last-child { border-bottom: none; margin-bottom: 0; }
+.notice-date { font-size: 0.8rem; color: #888; margin-right: 5px; font-weight: bold; }
+.faq-links { margin-top: 15px; padding-top: 15px;border-top: 1px dashed #2a2a2d;font-size: 0.9rem;color: #88888d;display: flex;flex-wrap: wrap;align-items: center;gap: 8px;}
+.faq-links a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background: rgba(28, 30, 33, 0.95); border: 1px solid #ffc107; color: #ffc107; height: 36px; padding: 0px 16px; font-size: 0.9rem; border-radius: 8px; margin-top: 12px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2); box-sizing: border-box; cursor: pointer; font-family: inherit; line-height: 1; }
+.faq-links a:hover { background: #000000; color: #ffc107; transform: scale(1.05); }
+
+/* 顯示全部按鈕 */
+.more-link { font-size: 0.85rem; color: var(--accent-color); text-decoration: none; font-weight: bold; }
+.more-link:hover { text-decoration: underline; }
+/* 讓內容整體往上提 */
+.container { 
+	max-width: 1050px !important;
+	width: 95%;
+    margin: 15px auto; 
+    padding: 0 20px 40px 20px !important; 
+	background: #fff;
+	box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* 輕微陰影 */
+    border-radius: 12px;
+    box-sizing: border-box;  /* 確保 padding 不會撐破寬度 */
+}
+/* 個人簡介區塊：壓縮內外距 */
+.intro-section { 
+    text-align: center; 
+    margin: 0 auto 30px auto !important; 
+    padding: 10px 0 !important; /* 縮減上下內距 */
+    border-bottom: 1px double #eee;
+}
+
+.intro-text { 
+    font-size: 1.4rem; 
+    line-height: 1.8; 
+    letter-spacing: 1px; 
+    color: #444; 
+    font-style: italic; 
+    white-space: pre-line; 
+    margin: 0 !important;
+	word-break: keep-all;
+    overflow-wrap: break-word;
+}
+/* 超自然現象彙典 (FAQ) 專屬卡片間距調整 */
+#faq-content .card {
+    margin-bottom: 25px; /* 加大卡片間距 */
+}
+#faq-content .card:last-child {
+    margin-bottom: 0;
+}
+.services { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 40px; }
+/* 專業服務：四個以下一列兩個，五個以上一列三個（由 JS 依筆數掛 data-cols） */
+#services-container[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+#services-container[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 700px) {
+    #services-container[data-cols] { grid-template-columns: 1fr; }
+}
+.card { border: 1px solid #eee; padding: 25px; border-radius: 12px; transition: 0.3s; background: #fff; }
+.card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); transform: translateY(-5px); }
+.card h3 { color: var(--primary-color); border-bottom: 2px solid var(--accent-color); display: inline-block; padding-bottom: 5px; margin-top: 0; margin-bottom: 15px; }
+.card p { margin: 0; color: #666; font-size: 0.95rem; text-align: justify; }
+
+/* YouTube 響應式容器 */
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 比例 */
+    height: 0;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* 視覺紀錄影片分頁 */
+.vid-tabs { display: flex; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
+.vid-tab { padding: 4px 14px; border-radius: 20px; border: 1px solid #dcbfa2; background: #ffffff; color: #8b7355; cursor: pointer; font-family: inherit; font-size: 0.85rem; transition: all 0.2s; }
+.vid-tab:hover { border-color: #8b7355; }
+.vid-tab.active { background: #8b7355; color: #ffffff; }
+
+/* 入口按鈕 */
+.btn { display: inline-block; background: var(--primary-color); color: #fff; padding: 12px 35px; text-decoration: none; border-radius: 30px; margin-top: 20px; transition: 0.3s; }
+.btn:hover { background: var(--accent-color); }
+/* 消除 ul 預設的巨大外距與內距 */
+#contact ul {
+    margin: 0;
+    padding-left: 20px; /* 只留一點點縮排 */
+    font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+	header {
+        padding: 1rem 3%; /* 縮小左右內距 */
+        flex-direction: column; /* 💡 讓 Logo 和 導覽連結分兩行展示，或是縮小字體 */
+        gap: 10px;
+    }
+	html {
+        /* 手機版建議設定在 110px ~ 120px 之間 */
+        scroll-padding-top: 120px; 
+    }
+    nav a {
+        margin-left: 10px; /* 縮小連結間距 */
+        font-size: 0.8rem;
+    }
+    .logo {
+        font-size: 1.2rem;
+    }
+    .container {
+        width: 100%;         /* 手機版可以考慮佔滿 100%，或維持 95% 看你喜好 */
+        margin: 0 auto;      /* 手機版頂部不需要空隙 */
+        border-radius: 0;    /* 手機版去掉圓角，看起來更俐落 */
+        box-shadow: none;    /* 手機版去掉陰影，節省效能且視覺更乾淨 */
+    }
+	.intro-section {
+        padding: 10px 5px !important; /* 減少左右內距，騰出寬度給文字 */
+    }
+	.intro-text {
+       white-space: pre-line;
+	    font-size: 0.95rem;           /* 💡 再稍微縮小一點點，提高長句的容錯率 */
+	    line-height: 1.6;             /* 稍微放寬行高，靈異故事的文字感會更強 */
+	    letter-spacing: 0.5px;
+	    
+	    /* 置中核心優化 */
+	    text-align: center;           /* 這是手動換行美感的關鍵 */
+	    display: block;               /* 改為 block 配合 width 100% 在手機端更穩健 */
+	    width: 100%;
+	    margin: 0 auto !important;
+	    
+	    padding: 0 5px;               /* 縮小 padding，把更多寬度留給文字，防止意外斷行 */
+	    box-sizing: border-box;       /* 確保 padding 不會撐破 100% 寬度 */
+	    
+	    /* 增加平滑感 */
+	    -webkit-font-smoothing: antialiased; 
+	    word-wrap: break-word;        /* 防止極端情況下文字溢出 */
+    }
+    /* 調整公告標題，防止過長 */
+    .notice-item {
+        word-break: break-all; 
+    }
+}
+/* --- 轉場大門特效 --- */
+#door-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 9999;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    transition: opacity 0.8s ease;
+}
+
+#stage {
+    position: relative;
+    width: 100vw; height: 100vh;
+    perspective: 1200px;
+}
+
+.door-container {
+    position: absolute;
+    width: 100%; height: 100%;
+    display: flex;
+    transition: transform 2s ease-in, opacity 1s;
+}
+
+.door-panel {
+    width: 50vw; height: 100vh;
+    background-color: #7b1d19; /* 與門板圖片相近的紅 */
+    background-image: 
+        linear-gradient(90deg, rgba(0,0,0,0.5) 0%, transparent 50%, rgba(0,0,0,0.5) 100%),
+        url('/wood-pattern.png');
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+    transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #2a0a08;
+}
+
+.left-door { transform-origin: left; }
+.right-door { transform-origin: right; }
+
+/* 門耳 (豎木) */
+.ear {
+    position: absolute; width: 45px; height: 350px;
+    background: #5a1916;
+    top: 50%; transform: translateY(-50%);
+    box-shadow: 5px 0 20px rgba(0,0,0,0.8);
+    z-index: 20;
+}
+.left-door .ear { right: 50px; }
+.right-door .ear { left: 50px; }
+
+/* 橫向門閂 */
+.bolt {
+    position: absolute; height: 55px; width: 250px;
+    background: #5a1916;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    transition: all 1s cubic-bezier(0.5, 0, 0.5, 1);
+    z-index: 15;
+    clip-path: polygon(0 20%, 15% 20%, 15% 0, 100% 0, 100% 100%, 15% 100%, 15% 80%, 0 80%);
+}
+.bolt-top { top: 20%; left: 10%; }
+.bolt-bottom { bottom: 20%; right: 10%; transform: scaleX(-1); }
+
+/* --- 動態動畫狀態 --- */
+
+/* 門閂解鎖滑動 */
+.is-unlocking .bolt-top { transform: translateX(-300px); opacity: 0; }
+.is-unlocking .bolt-bottom { transform: scaleX(-1) translateX(-300px); opacity: 0; }
+
+/* 向內開門 */
+.is-open .left-door { transform: rotateY(85deg); }
+.is-open .right-door { transform: rotateY(-85deg); }
+.is-open .door-container { transform: scale(0.8); opacity: 0; }

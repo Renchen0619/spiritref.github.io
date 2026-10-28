@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超自然現象彙典 | 鬼磕頭</title>
+    <meta name="description" content="針對靈學服務、驅鬼儀式及常見疑問的專業解答。">
+    <link rel="icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://spiritref.github.io/GhostKowtow.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://spiritref.github.io/GhostKowtow.jpg">
+    <link rel="stylesheet" href="https://spiritref.github.io/CSS/global.css">
+    <link rel="stylesheet" href="../CSS/Services.css?v=20261011">
+    <link rel="stylesheet" href="../CSS/cloud.css?v=20261011">
+    <style>
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #f8f9fa; padding: 20px; color: #333; line-height: 1.8; }
+        .list-container { max-width: 850px; margin: auto; background: rgba(216, 213, 208, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); border: 1px solid #eaeaea; color: #333333; }
+        h1 { text-align: center; color: #1a1a1a; font-size: 2.2em; font-weight: 900; margin: 0 0 10px; letter-spacing: 2px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+        .detail-title { text-align: center; color: #1a1a1a; font-size: 1.6em; font-weight: 900; margin: 0 0 10px; line-height: 1.4; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; }
+        .faq-a { color: #5c4332; padding-left: 20px; font-weight: 600; white-space: pre-line; line-height: 1.6; }
+        .notice-item { padding: 12px; margin-bottom: 8px; background: linear-gradient(135deg, rgba(247,235,215,0.68) 0%, rgba(230,211,175,0.68) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid #dcbfa2; border-left: 5px solid #8b7355; border-radius: 8px; color: #3e2723; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: box-shadow 0.3s, transform 0.3s; height: auto; min-height: 0; }
+        .faq-links { margin-top: 4px; padding-top: 4px; border-top: 1px dashed #2a2a2d; font-size: 0.9rem; color: #88888d; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .faq-links a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background: rgba(28, 30, 33, 0.95); border: 1px solid #ffc107; color: #ffc107; height: 32px; padding: 0px 14px; font-size: 0.9rem; border-radius: 8px; margin-top: 8px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2); box-sizing: border-box; cursor: pointer; font-family: inherit; line-height: 1; }
+        .faq-links a:hover { background: #000000; color: #ffc107; transform: scale(1.05); }
+        @media (max-width: 600px) { body { padding: 10px; } .detail-container { padding: 15px; } .faq-a { padding-left: 15px; } }
+    </style>
+</head>
+<body class="cloud-bg">
+<div id="cloud-container"></div>
+<div class="expandable-menu-container" id="menuContainer">
+    <div class="menu-content" id="menuContent"></div>
+    <button class="floating-service-btn" id="serviceBtn" onclick="toggleMenu()">
+        <span id="serviceIcon">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </span>
+        <span id="serviceText">選單</span>
+    </button>
+</div>
+<div class="list-container">
+    <a href="./" class="back-home" style="margin-bottom:12px;">&#x2190;&#xFE0E; 超自然現象彙典</a>
+    <div id="detail-content">載入中...</div>
+</div>
+<footer>
+    <p>&copy; 2026 鬼磕頭. All Rights Reserved.</p>
+</footer>
+<script type="module">
+    import * as Global from '/Javascript/global.js?v=20261011';
+    const iniPath = '/settings/global.ini';
+    async function init() {
+        try {
+            const config = await Global.getIni(iniPath);
+            if (config && config.MENU_DATA) Global.initMenu(config.MENU_DATA);
+        } catch (e) {}
+        const params = new URLSearchParams(location.search);
+        const id = params.get('id') ? decodeURIComponent(params.get('id')) : null;
+        const container = document.getElementById('detail-content');
+        let data = [];
+        try {
+            const r = await fetch('/Data/Services.json?t=' + Date.now(), { cache: 'no-store' });
+            if (r.ok) data = await r.json();
+        } catch (e) {}
+        if (!Array.isArray(data)) data = [];
+        const item = data.find(f => {
+            const ks = Object.keys(f);
+            const fid = f['ID'] || (ks.length > 1 ? f[ks[1]] : '');
+            const title = ks.length > 1 ? f[ks[1]] : '';
+            return String(fid) === String(id || '') || String(title) === String(id || '');
+        });
+        if (!item) {
+            container.innerHTML = '<div class="notice-item"><p>找不到此常見問題。</p></div>';
+            return;
+        }
+        const ks = Object.keys(item);
+        const q = ks.length > 1 ? (item[ks[1]] || '') : '';
+        const a = ks.length > 2 ? (item[ks[2]] || '暫無內容') : '暫無內容';
+        const posturl = ks.length > 3 ? (item[ks[3]] || '') : '';
+        let urlArray = [];
+        if (Array.isArray(posturl)) urlArray = posturl;
+        else if (typeof posturl === 'string' && posturl.trim() !== '') urlArray = posturl.split(/[ ,\n]+/).filter(u => u.trim() !== '');
+        const linksHtml = urlArray.length > 0
+            ? '<div class="faq-links"><span>相關文章：</span>' + urlArray.map(u => '<a href="' + u.trim() + '" target="_blank" rel="noopener noreferrer">篇章蟲洞</a>').join('') + '</div>'
+            : '';
+        document.title = q + ' | 超自然現象彙典';
+        container.innerHTML = '<h1 class="detail-title" style="margin-top:12px;">' + q + '</h1>'
+            + '<div class="notice-item">'
+            + '<div class="faq-a"><div class="faq-answer-text">' + a + '</div>' + linksHtml + '</div>'
+            + '</div>';
+    }
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+<script src="../Javascript/cloud.js?v=20261012"></script>
+</body>
+</html>
