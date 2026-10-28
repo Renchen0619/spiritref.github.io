@@ -735,7 +735,10 @@ function renderSvcRows() {
 		let lookhtml = '';
 		if (cat === '超自然現象彙典') {
 			const artUrl = `../services/faq/detail.html?id=${esc(it['ID'] ?? idx + 1)}`;
-			lookhtml = '<a class="rowbtn" style="text-decoration:none;" href=' + artUrl + ' target="_blank">👁查看</a>'
+			lookhtml = `
+				<a class="rowbtn" style="text-decoration:none;" href="${artUrl}" target="_blank">👁查看</a>
+				<button class="rowbtn" data-sact="copy" data-url="${artUrl}">複製網址</button>
+			`;
 		}
 		return '<tr><td>' + esc(it['ID'] ?? idx + 1) + '</td>'
 		+ '<td class="title">' + esc(it['標題'] || '') + '</td>'
