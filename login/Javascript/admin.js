@@ -804,7 +804,7 @@ function collectFields() {
 
 function showPreview() {
 	const f = collectFields();
-	const imgs = String(f['圖片網址'] || '').split(/\r?\n|\|/).filter(s => s.trim())
+	const imgs = String('https://spiritref.github.io/ghoststory/' + f['圖片網址'] || '').split(/\r?\n|\|/).filter(s => s.trim())
 		.map(s => `<img src="${esc(s.trim())}" style="max-width:100%;margin-top:8px;" onerror="this.style.display='none'">`).join('');
 	$('previewBox').innerHTML = `<h3 style="margin:0 0 8px;">${esc(f['標題'] || '')}</h3><div>${esc(f['貼文內容'] || '').replace(/\n/g, '<br>')}</div>${imgs}`;
 	$('previewBox').style.display = 'block';
