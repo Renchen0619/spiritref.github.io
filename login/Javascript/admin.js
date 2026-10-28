@@ -608,7 +608,7 @@ function renderNoticesAdmin() {
 				<button class="rowbtn" data-nact="pin" data-i="${idx}">${pinned ? '取消置頂' : '📌置頂'}</button>
 			</td><td>${esc(it['PostID'] ?? '')}</td>
 			<td class="title">${esc(it['標題'] || '')}</td>
-			<td class="title cell-text" style="max-width:280px;white-space:pre-wrap;" data-i="${idx}">${esc(short)}</td>
+			<td class="title cell-text" style="max-width:280px; min-width:150px; white-space:pre-wrap;" data-i="${idx}">${esc(short)}</td>
 			<td style="white-space:nowrap;">
 				<button class="rowbtn" data-nact="preview" data-i="${idx}">預覽</button>
 				<button class="rowbtn" data-nact="edit" data-i="${idx}">編輯</button>
