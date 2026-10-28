@@ -731,7 +731,7 @@ function renderSvcRows() {
 	}
 	$('svcRows').innerHTML = page.map((it) => {
 		const idx = allSvc.indexOf(it);
-		return '<tr><td>' + esc(it['PostID'] ?? idx + 1) + '</td>'
+		return '<tr><td>' + esc(it['ID'] ?? idx + 1) + '</td>'
 		+ '<td class="title">' + esc(it['標題'] || '') + '</td>'
 		+ '<td style="white-space:nowrap;">'
 		+ '<button class="rowbtn" data-sact="up" data-i="' + idx + '">↑</button>'
@@ -755,7 +755,7 @@ function openEditor(kind, idx) {
 	const src = kind === 'post' ? allPosts[idx] : allSvc[idx];
 	editing = { kind, idx };
 	const hideLink = kind === 'svc' && src['分類'] === '專業服務';
-	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${src['PostID'] ?? src['標題']}）`;
+	$('modalTitle').innerText = (kind === 'post' ? '編輯文章' : '編輯內容') + `（${src['PostID'] ?? src['ID'] ?? src['標題']}）`;
 	$('modalFields').innerHTML = fieldDefs(kind)
 		.filter(([k]) => !(hideLink && k === '連結'))
 		.map(([k, t]) => {
