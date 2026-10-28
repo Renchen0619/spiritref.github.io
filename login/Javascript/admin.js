@@ -735,7 +735,7 @@ function renderSvcRows() {
 		let lookhtml = '';
 		if (cat === '超自然現象彙典') {
 			////?id=Compendium_001
-			const artUrl = `../services/faq/detail.html?id=${encodeURIComponent(getCombinedId(it))}`;
+			const artUrl = `../services/faq/detail.html?id=${esc(it['ID'] ?? idx + 1)}`;
 			lookhtml = '<a class="rowbtn" style="text-decoration:none;" href=' + artUrl + '" target="_blank">👁查看</a>'
 		}
 		return '<tr><td>' + esc(it['ID'] ?? idx + 1) + '</td>'
