@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap 位置
+Sitemap: https://spiritref.github.io/sitemap.xml
