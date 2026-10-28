@@ -553,6 +553,7 @@ function renderPosts() {
 			<td style="white-space:nowrap;">
 				<button class="rowbtn" data-act="pin" data-i="${idx}">${pinned ? '取消置頂' : '置頂'}</button>
 				<a class="rowbtn" style="text-decoration:none;" href="${artUrl}" target="_blank">👁查看</a>
+				<button class="rowbtn" data-sact="copy" data-url="${artUrl}">複製網址</button>
 				<button class="rowbtn" data-act="preview" data-i="${idx}">預覽</button>
 				<button class="rowbtn" data-act="edit" data-i="${idx}">編輯</button>
 				<button class="rowbtn" data-act="del" data-i="${idx}">刪除</button>
