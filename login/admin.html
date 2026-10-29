@@ -71,13 +71,13 @@
 	</div>
 
 	<div class="tabs">
-		<button data-tab="posts" class="active">📖 文章</button>
-		<button data-tab="notices">📢 公告</button>
-		<button data-tab="services" data-cat="專業服務">📜 專業服務</button>
-		<button data-tab="services" data-cat="超自然現象彙典">📖 超自然現象彙典</button>
-		<button data-tab="services" data-cat="視覺紀錄">🎬 視覺紀錄</button>
+		<button data-tab="notices" class="active">📢 公告</button>
+		<button data-tab="services" data-cat="專業服務">📜 服務</button>
+		<button data-tab="services" data-cat="超自然現象彙典">📖 彙典</button>
+		<button data-tab="services" data-cat="視覺紀錄">🎬 視覺</button>
+		<button data-tab="posts">📝 日誌</button>
 		<button data-tab="images">🖼️ 圖片</button>
-		<button data-tab="sys">🩺 系統狀態</button>
+		<button data-tab="sys">🩺 系統</button>
 	</div>
 
 	<section id="tab-posts" class="panel active">
@@ -197,7 +197,7 @@
 </script>
 <script type="module">
 	import { requireAdmin, logoutAndGo, onAuthChange } from './Javascript/adminAuth.js?v=20261011';
-	import { initAdmin } from './Javascript/admin.js?v=20261028g';
+	import { initAdmin } from './Javascript/admin.js?v=20261029a';
 	try {
 		const session = await requireAdmin('./');
 		if (session) {
