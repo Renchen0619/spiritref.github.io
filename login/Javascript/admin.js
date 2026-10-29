@@ -1035,6 +1035,8 @@ export async function initAdmin(sess) {
 			imgLoaded = true;
 			loadImages();
 		}
+		if (b.dataset.tab === 'posts' && !allPosts.length) loadPosts();
+		if (b.dataset.tab === 'notices' && !allNotices.length) loadNotices();
 	});
 
 	$('postSearch').oninput = () => { postPage = 1; renderPosts(); };
@@ -1171,7 +1173,7 @@ export async function initAdmin(sess) {
 		logOp('清除快取', '');
 	};
 
-	await loadPosts();
-	await loadNotices();
-	await loadSvc();
+	loadPosts();
+	loadNotices();
+	loadSvc();
 }
